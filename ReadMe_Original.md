@@ -1,6 +1,6 @@
 Changes to script:
-Samantha Klasfeld updated the script to work for python3 on 6/15/2020 using
-the 2to3 commands.
+Samantha Klasfeld updated the script to work for python3 on 6/15/2020.
+Below is the latest ReadMe file downloaded from https://sites.google.com/site/danposdoc/
 
 Install and Usage:
 * Download and extract the package danpos-#.#.#.tgz.
@@ -38,9 +38,9 @@ Feb 2013, the 2.1.2 version now:
 *put back the occupancy P value, fuzziness score, and fuzziness P value in the file pooled/#.peaks.xls
 
 Feb 2013, the 2.1.1 version now:
-*comes with a dantools 0.2.0 version at http://code.google.com/p/dantools/, which could be used to do additional analysis, e.g. select peaks based on differential values or distance to promoters, or do plot around transcription start sites. Thanks to Gabriel Gutiérrez and Jared Taylor for their suggestions on this.
+*comes with a dantools 0.2.0 version at http://code.google.com/p/dantools/, which could be used to do additional analysis, e.g. select peaks based on differential values or distance to promoters, or do plot around transcription start sites. Thanks to Gabriel Guti≈Ωrrez and Jared Taylor for their suggestions on this.
 *Rename the final out put file to #.allPeaks.xls and contains all nucleosomes that are either differential or not, this allow users to retrieve nucleosomes showing most or least significant changes in occupancy, fuzziness, or positions.
-*provide a differential FDR value in addition to each of the previous P value, thanks to Gabriel Gutiérrez for his suggestions on this point.
+*provide a differential FDR value in addition to each of the previous P value, thanks to Gabriel Guti≈Ωrrez for his suggestions on this point.
 
 Version 2.1.0
 * the path seperator '-' in previous version is now replaced by ':'
