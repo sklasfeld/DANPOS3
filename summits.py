@@ -129,11 +129,8 @@ class Summits:
                             elif vs[i]==vs[i+1]:
                                 pos=(ps[i]+ps[i+1])/2
                                 ps[i+1]=pos
-                                print("problem?")
-                                print(cr)
-                                print(i)
                                 print(round(pos/wg.step))
-                                vs[i+1]=wg.data[cr][round(pos/wg.step)] ###### added by Kaifu Chen Jul 10,2012 ######
+                                vs[i+1]=wg.data[cr][int(round(pos/wg.step))] ###### added by Kaifu Chen Jul 10,2012 ######
                     i+=1
                 if (ps[-1]-ps[-2])>=distance:
                     nps[ni],nps[ni+1],nvs[ni],nvs[ni+1]=ps[-2],ps[-1],vs[-2],vs[-1]
