@@ -236,11 +236,11 @@ def runDANPOS(command=''):
     parser.add_argument('--------------------------      ',dest="separator1",metavar='',default=None,help="")
     parser.add_argument('---  reads processing  ---',dest="separator1",metavar='',default=None,help="")
     parser.add_argument('--------------------------       ',dest="separator1",metavar='',default=None,help="")
-    parser.add_argument('-u',"--clonalcut", dest="clonalcut",metavar='',default='0',\
+    parser.add_argument('-u',"--clonalcut", dest="clonalcut",metavar='',default=0,\
                         help="the cutoff for adjusting clonal signal, \
                         set as a P value larger than 0 and smaller than 1, e.g 1e-10,\
                         or set as a interger reads count,\
-                        set as 0 if don't need to adjust clonal signal.")
+                        set as 0 if don't need to adjust clonal signal.", type=float)
     parser.add_argument("--frsz", dest="fs",metavar='',default=None,type=int,\
                         help="specify the average size of \
                         DNA fragments in the seuqnecing experiment. By default it is automatically \
