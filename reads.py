@@ -643,8 +643,8 @@ class reads:
                 continue
             num+=1
             if num%1000000==0: print(num,'reads parsed')
-            if stra=='+':mid=start/step
-            elif stra=='-':mid=end/step
+            if stra=='+':mid=int(start/step)
+            elif stra=='-':mid=int(end/step)
             if chr not in self.data:
                 self.data[chr]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
                 sizes[chr]=0
