@@ -11,6 +11,11 @@ from math import log10,log,sqrt
 from rpy2.robjects import r, FloatVector
 import re,sys
 
+def unnumpy(foo):
+    if type(foo).__module__ == "numpy":
+        foo = foo.item()
+    return(foo)
+
 def danpos(tpath=None,tbg=None,opath='./',\
            nonzero=False,amount=None,nor='Q',region_file=None,test="P",save=True,fdr=0,\
            pheight=1e-5,height=5,logp=5,\
@@ -612,7 +617,7 @@ def region_differential(file1,file2,gainFile,lossFile,ofile=None,widthFDRlist=No
         if t1==t2:tdiff=0
         else:tdiff=log10PropTest([t1,t2,t2,t1])
         if s1==s2:sdiff=0
-        else:sdiff=float(str(log10ppois(max(s1,s2)+1,min(s1,s2)+1)).split()[-1])
+        else:sdiff=float(str(log10ppois(unnumpy(max(s1,s2)+1),unnumpy(min(s1,s2)+1))).split()[-1])
         gdiff,ldiff=float(gcol[6]),float(lcol[6])# (0-log10Pval) of gain and loss
         if fdr==1:wfdr,tfdr,sfdr,gfdr,lfdr=findRank(widthFDRlist,0-wdiff)*1.0/lw,findRank(aucFDRlist,0-tdiff)*1.0/lt,findRank(smtFDRlist,0-sdiff)*1.0/ls,findRank(smtFDRlist,gdiff)*1.0/ls,findRank(smtFDRlist,ldiff)*1.0/ls
         else:wfdr,tfdr,sfdr,gfdr,lfdr='-','-','-','-','-'
@@ -646,18 +651,23 @@ def peakFDR(peakFile1,peakFile2=None,wg1=None,wg2=None,fdrsimu=1000000,cut=5):
         start=randint(rstart,rend)
         end=start+width
         if end>chrs[cr]-width:start,end=chrs[cr]-width,chrs[cr]
-        w1,w2,s1,s2,t1,t2=0,0,wg1.data[cr][start:end].max(),wg2.data[cr][start:end].max(),wg1.data[cr][start:end].sum()*step/width,wg2.data[cr][start:end].sum()*step/width
+        w1=0
+        w2=0
+        s1=wg1.data[cr][int(start):int(end)].max()
+        s2=wg2.data[cr][int(start):int(end)].max()
+        t1=wg1.data[cr][int(start):int(end)].sum()*step/width
+        t2=wg2.data[cr][int(start):int(end)].sum()*step/width
         k=start
         while k<end:
-            if wg1.data[cr][k]>=cut:w1+=step
-            if wg2.data[cr][k]>=cut:w2+=step
+            if wg1.data[cr][int(k)]>=cut:w1+=step
+            if wg2.data[cr][int(k)]>=cut:w2+=step
             k+=1
         if w1==w2:wdiff =0
         else:wdiff=log10PropTest([w1,w2,w2,w1])
         if t1==t2:tdiff=0
         else:tdiff=log10PropTest([t1,t2,t2,t1])
         if s1==s2:sdiff=0
-        else:sdiff=float(str(logppois(max(s1,s2)+1,min(s1,s2)+1)).split()[-1])
+        else:sdiff=float(str(logppois(unnumpy(max(s1,s2)+1),unnumpy(min(s1,s2)+1))).split()[-1])
         w[i],s[i],t[i]=wdiff,sdiff,tdiff
         i+=1
         #print wdiff,sdiff,tdiff
@@ -1060,8 +1070,10 @@ def allPositionsInOneFile(ofile='result.xls',controlPositionFile=None,treatPosit
             nuc+=1
 
             if test=='P':
-                if cwig.data[cr][p1/step]>twig.data[cr][p2/step]:dp1=float(ppois(cwig.data[cr][p1/step],max(twig.data[cr][p2/step],1))[0])
-                else:dp1=float(ppois(twig.data[cr][p2/step],max(cwig.data[cr][p1/step],1))[0])
+                if cwig.data[cr][p1//step]>twig.data[cr][p2//step]:
+                    dp1=float(ppois(unnumpy(cwig.data[cr][p1//step]), unnumpy(max(twig.data[cr][p2//step],1)))[0])
+                else:
+                    dp1=float(ppois(unnumpy(twig.data[cr][p2//step]), unnumpy(max(cwig.data[cr][p1//step],1)))[0])
 
             if len(c2tDic[cr][cpos])<2:# no differential position is assigned to c2tDic[cr][cpos] (cpos is the control nucleosome position position, c2tDic[cr][cpos][0] is the treatment nucleosome position position)
                 minp,maxp,maxv=min(p1,p2,dwig.data[cr].size*step-step,cwig.data[cr].size*step-step,twig.data[cr].size*step-step),max(p1,p2),0 # '*step' is add by kaifu on Mar 6, 2013
@@ -1071,19 +1083,19 @@ def allPositionsInOneFile(ofile='result.xls',controlPositionFile=None,treatPosit
                 tp=(minp+maxp)/(2*step)
                 tdis=(maxp-minp)/(2*step)
                 while tdis>=0:
-                    if abs(maxv)>abs(dwig.data[cr][tp+tdis]):
+                    if abs(maxv)>abs(dwig.data[cr][int(tp+tdis)]):
                         maxv=dwig.data[cr][tp+tdis]
                         p=tp+tdis
-                    if abs(maxv)>abs(dwig.data[cr][tp-tdis]):
+                    if abs(maxv)>abs(dwig.data[cr][int(tp-tdis)]):
                         maxv=dwig.data[cr][tp-tdis]
                         p=tp-tdis
                     tdis-=1
                 c2tDic[cr][cpos].append(int(p*step))
             p=c2tDic[cr][cpos][1]
-            dp2=abs(dwig.data[cr][p/step])
+            dp2=abs(dwig.data[cr][p//step])
             if len(c2tDic[cr][cpos][1:])>2:
                 for tp in c2tDic[cr][cpos][1:]:
-                    tdp2=abs(dwig.data[cr][tp/step]) #corrected by Kaifu Chen on Feb 13,2013, previously it was: tdp2=dwig.data[cr][tp/step]
+                    tdp2=abs(dwig.data[cr][tp//step]) #corrected by Kaifu Chen on Feb 13,2013, previously it was: tdp2=dwig.data[cr][tp/step]
                     if tdp2>dp2:
                         p=tp
                         dp2=tdp2
@@ -1095,31 +1107,33 @@ def allPositionsInOneFile(ofile='result.xls',controlPositionFile=None,treatPosit
             #else:
             strp=str(p)
             if cr not in cpd:strp1='-'
-            elif p1/step not in cpd[cr]:strp1='-'
+            elif p1//step not in cpd[cr]:strp1='-'
             else:strp1=str(p1)
             if cr not in tpd:strp2='-'
-            elif p2/step not in tpd[cr]:strp2='-'
+            elif p2//step not in tpd[cr]:strp2='-'
             else:strp2=str(p2)
             if strp1=='-' and strp2=='-':strp1,strp2=strp,strp
             elif strp1=='-':strp1==strp2
             elif strp2=='-':strp2=strp1
             middle=(p1+p2)/2
-            olines.append([cr,str(middle-dis),str(middle+dis),str(middle),str(strp1),str(strp2),str(strp),str(abs(p2-p1)),str(cwig.data[cr][p1/step]),str(twig.data[cr][p2/step]),\
-                           str(log(max(twig.data[cr][p2/step],1)/max(cwig.data[cr][p2/step],1))/log(2)),\
-            str(0-dp1),'-',str(cwig.data[cr][p/step]),str(twig.data[cr][p/step]),\
-            str(log(max(1,twig.data[cr][p/step])/max(cwig.data[cr][p/step],1))/log(2)),str(0-dp2),'-',str(sd1),str(sd2),str(log(max(1,sd2)/max(sd1,1))/log(2)),str(dp),'-',nuc])
+            olines.append([cr,str(middle-dis),str(middle+dis),str(middle),str(strp1),str(strp2),str(strp),str(abs(p2-p1)),str(cwig.data[cr][p1//step]),str(twig.data[cr][p2//step]),\
+                           str(log(max(twig.data[cr][p2//step],1)/max(cwig.data[cr][p2//step],1))/log(2)),\
+            str(0-dp1),'-',str(cwig.data[cr][p//step]),str(twig.data[cr][p//step]),\
+            str(log(max(1,twig.data[cr][p//step])/max(cwig.data[cr][p//step],1))/log(2)),str(0-dp2),'-',str(sd1),str(sd2),str(log(max(1,sd2)/max(sd1,1))/log(2)),str(dp),'-',nuc])
     if fdr==1:
         if fdrsimu==0:
             tgs=0
             for cr in dwig.data:tgs+=dwig.data[cr].size
             fdrsimu=min(100000,max(10000,tgs/1000))
         print('calculating occupancy differential FDR ...')
-        if occFDRlist==None:occFDRlist=occFDR(dwig=dwig,simu=fdrsimu,regions=fdrRegions)
+        if type(occFDRlist).__module__=='builtins' and occFDRlist==None:
+            occFDRlist=occFDR(dwig=dwig,simu=fdrsimu,regions=fdrRegions)
         for i in range(len(dr1)):dr1[i]=findRank(occFDRlist,dr1[i])*1.0/fdrsimu
         for i in range(len(dr2)):dr2[i]=findRank(occFDRlist,dr2[i])*1.0/fdrsimu
         
         print('calculating fuzziness differential FDR ...')
-        if fuzFDRlist==None:fuzFDRlist=fuzFDR(cwig=cwig,twig=twig,simu=fdrsimu,rd=rd,regions=fdrRegions)
+        if type(fuzFDRlist).__module__=='builtins' and fuzFDRlist==None:
+            fuzFDRlist=fuzFDR(cwig=cwig,twig=twig,simu=fdrsimu,rd=rd,regions=fdrRegions)
         for i in range(len(dr)):dr[i]=findRank(fuzFDRlist,0-dr[i])*1.0/fdrsimu
 
     for line in olines:
@@ -1258,7 +1272,7 @@ def findRank(vec,v):
     start,end=0,terminal+1
     find=True
     while find:
-        p=(start+end)/2
+        p=(start+end)//2
         if p>=terminal:return terminal
         if p<=0: return 0
         if vec[p-1]>=v and vec[p]<=v:
@@ -1388,7 +1402,9 @@ def positionAdjust(dic,infile,outfile,wg,distance=100,fcut=None,hdiff=0.1):
         if fuz<=fcut:tdic[cr][pos]=line
         else:
             tp=pos/step
-            h,mi1,mi2=max(wg.data[cr][tp],1),wg.data[cr][max(tp-td,0):tp].min(),wg.data[cr][tp:min(tp+btd,wg.data[cr].size)].min()
+            h = max(wg.data[cr][int(tp)],1)
+            mi1 =wg.data[cr][int(max(tp-td,0)):int(tp)].min()
+            mi2 = wg.data[cr][int(tp):int(min(tp+btd,wg.data[cr].size))].min()
             mi=max(mi1,mi2)
             if (h-mi)/h>=hdiff and (h-mi)/h>=hdiff*1.5:tdic[cr][pos]=line#retuire occupancy to be hdiff fold lower at one linker relative to position center, and 1.5*hdiff lower at the other linker.
             

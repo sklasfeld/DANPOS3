@@ -31,7 +31,7 @@ class Summits:
                 tp=ps[i]/wig.step
                 if cr in wig.data:
                     if tp>wig.data[cr].size:wig.data[cr].resize(tp+1,refcheck=0)
-                    smt.data[cr]['v'][i]=wig.data[cr][tp]
+                    smt.data[cr]['v'][i]=wig.data[cr][int(tp)]
                 else:smt.data[cr]['v'][i]=1
                 i+=1
 

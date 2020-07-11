@@ -90,7 +90,7 @@ class reads:
         maxsize=maxsize/step+1
         print('calculating ...')
         dic={}
-        for i in range(minsize,maxsize):
+        for i in range(int(minsize),int(maxsize)):
             dic[i]=0
             szsum=0
             for chr in self.data:
@@ -144,14 +144,15 @@ class reads:
         
         avg=self.mean()*self.step ##### '*self.step' is added by Kaifu on Aug 1st, 2012 #####
         ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE))}''')
+
         lgpcut=0-log(cut)/log(10)
         cut=int(avg+0.5)
-        while(0-(float(str(ppois(cut,avg)).split()[-1])/log(10))<lgpcut):cut+=1
+        while(0-(float(str(ppois(cut,avg.item())).split()[-1])/log(10))<lgpcut):cut+=1
         if cut<1:cut=1
         
         print('calculating fragment size ...')
         dic={}
-        for i in range(minsize,maxsize):dic[i]=0
+        for i in range(int(minsize),int(maxsize)):dic[i]=0
         for chr in self.data:
             sz=self.data[chr]['+'].size-maxsize
             if sz<=0:continue
@@ -162,22 +163,22 @@ class reads:
                 tchr[stra]=((tchr[stra]**2)**0.5+tchr[stra])/2#remove all neative values
                 tchr[stra]=self.data[chr][stra]-tchr[stra]
             
-            for i in range(minsize,maxsize):
-                c=tchr['+'][:sz]*tchr['-'][i:(sz+i)]
+            for i in range(int(minsize),int(maxsize)):
+                c=tchr['+'][:int(sz)]*tchr['-'][i:(int(sz)+i)]
                 dic[i]+=c.sum()
         p=[]
         m=max(dic.values())
         if m<1:m=1
         print('sizes distribution:')
-        for i in range(minsize,maxsize):
+        for i in range(int(minsize),int(maxsize)):
             oline=""
             for j in range(0,int(100*dic[i]/m),):oline+='-'
             print(oline,str(i*step)+'bp',str(dic[i]))
             if dic[i]>=m*0.95:p.append(i)
         warning=False
-        for i in range(minsize,minsize+3):
+        for i in range(int(minsize),int(minsize)+3):
             if i in p:warning=True
-        for i in range(maxsize-3,maxsize):
+        for i in range(int(maxsize)-3,int(maxsize)):
             if i in p:warning=True
         if warning: print('warning: the probilities of calculated size and up/bottom sizes are too close, we suggest to change up/bottom limit and try again!')
         upv,dpv=0.0,0.0        
@@ -757,8 +758,8 @@ class reads:
         if  cut>0 and cut<1:
             ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE))}''')
             lgpcut=0-log(cut)/log(10)
-            cut=int(avg+0.5)
-            while(0-(float(str(ppois(cut,avg)).split()[-1])/log(10))<lgpcut):cut+=1
+            cut=avg+0.5
+            while(0-(float(str(ppois(cut,float(avg))).split()[-1])/log(10))<lgpcut):cut+=1
             if cut<1:cut=1
         print('whole genome average reads density is',avg,'use cutoff:',cut)
         cut*=self.step ##### added by Kaifu on May29, 2014
