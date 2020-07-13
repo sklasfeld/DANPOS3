@@ -140,7 +140,7 @@ class Summits:
                         nps[ni],nvs[ni]=ps[-2],vs[-2]
                     elif vs[-2]==vs[-1]:
                         ###### added by Kaifu Chen Jul 10,2012 ######
-                        nps[ni](ps[-2]+ps[-1])/2
+                        nps[ni]=(ps[-2]+ps[-1])/2
                         nvs[ni]=wg.data[cr][int(((ps[-2]+ps[-1])/2)/wg.step)] 
                     else:nps[ni],nvs[ni]=ps[-1],vs[-1]
                     ni+=1
