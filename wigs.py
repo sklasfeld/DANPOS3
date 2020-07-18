@@ -6,6 +6,7 @@ from rpy2.robjects import r,FloatVector
 from copy import deepcopy
 from time import time
 import sys
+import functions
 
 '''
 import sys,os,argparse,glob
@@ -62,19 +63,19 @@ class Wigs:
         if sampling_total==None:
             wsum={}
             for wig in wigs:wsum[wig]=wigs[wig].sum()
-            asum=sum(wsum.values())/len(list(wsum.keys()))
+            asum=functions.div(sum(wsum.values()),len(list(wsum.keys())))
             for wig in names:
                 sys.stdout.write(wig + 'from' + str(wigs[wig].sum()) + 'to ')
-                if scalepairs==None:wigs[wig].foldChange(asum*1.0/wsum[wig])
-                else:wigs[wig].foldChange(scalepairs[wig]*1.0/wsum[wig])
+                if scalepairs==None:wigs[wig].foldChange(functions.div(asum*1.0,wsum[wig]))
+                else:wigs[wig].foldChange(functions.div(scalepairs[wig]*1.0,wsum[wig]))
                 sys.stdout.write(str(wigs[wig].sum()) + "\n")
         else:
-            average_total=sum(sampling_total.values())/len(list(sampling_total.keys()))
+            average_total=functions.div(sum(sampling_total.values()),len(list(sampling_total.keys())))
             for name in names:
                 sys.stdout.write(name + 'from' + str(wigs[name].sum()) + 'to ')
-                if scalepairs==None:wigs[name].foldChange(average_total*1.0/sampling_total[name])
+                if scalepairs==None:wigs[name].foldChange(functions.div(average_total*1.0,sampling_total[name]))
                 else:
-                    wigs[name].foldChange(scalepairs[name]/sampling_total[name])
+                    wigs[name].foldChange(functions.div(scalepairs[name],sampling_total[name]))
                 sys.stdout.write(str(wigs[name].sum()) + "\n")
         if nonzero:
             sys.stdout.write('further correction based on count of non-zero base pairs\n')
@@ -82,10 +83,10 @@ class Wigs:
             for wig in wigs:
                 gsizes[wig]=wigs[wig].gsize()
                 non0sizes[wig]=wigs[wig].non0size()
-            agsize=sum(gsizes.values())*1.0/len(list(gsizes.keys()))
+            agsize=functions.div(sum(gsizes.values())*1.0,len(list(gsizes.keys())))
             for wig in wigs:
                 sys.stdout.write(wig + 'from' + str(wigs[wig].sum()) + 'to ')
-                wigs[wig].foldChange(non0sizes[wig]/agsize)
+                wigs[wig].foldChange(functions.div(non0sizes[wig],agsize))
                 sys.stdout.write(str(wigs[wig].sum()) +
                     'based on non0size' + non0sizes[wig] + 'and genome size' 
                     + agsize + "\n")
@@ -113,16 +114,16 @@ class Wigs:
                 'percents of genomic regions with extremely high and low signal values\n')
             wsums={}
             for name in names:wsums[name]=self.data[name].sum()
-            wavg=sum(wsums.values())/len(list(wsums.values()))
+            wavg=functions.div(sum(wsums.values()),len(list(wsums.values())))
             
             rfwig=deepcopy(self.data[names[0]])
-            rfwig.foldChange(wavg*1.0/wsums[names[0]])
+            rfwig.foldChange(functions.div(wavg*1.0,wsums[names[0]]))
             for name in names[1:]:
-                self.data[name].foldChange(wavg*1.0/wsums[name])
+                self.data[name].foldChange(functions.div(wavg*1.0,wsums[name]))
                 rfwig.add(self.data[name])
-                self.data[name].foldChange(wsums[name]*1.0/wavg)
+                self.data[name].foldChange(functions.div(wsums[name]*1.0,wavg))
                 
-            rfwig.foldChange(1.0/len(names))
+            rfwig.foldChange(functions.div(1.0,len(names)))
             lowcut,highcut=rfwig.percentile(p=[exclude_low_percent,100-exclude_high_percent],bnum=bnum,nonzero_end=nonzero)
             rg=rfwig.regionWithinValueRange(lowcut,highcut)
             if region_out_file!=None:rg.save(region_out_file)
@@ -130,11 +131,11 @@ class Wigs:
             sys.stdout.write('calculate total signal in each sample in genomic regions defined by' + region_file + "\n")
             rg=Wig(region_file)
         for name in names:sampling_total[name]=self.data[name].multiply(rg).sum()
-        sys.stdout.write(str(rg.sum()) + ' (' + str(rg.sum()*100.0/rg.gsize()) + 
+        sys.stdout.write(str(rg.sum()) + ' (' + str(functions.div(rg.sum()*100.0,rg.gsize())) + 
             ' %) of ' + rg.gsize() + ' base pairs calculated:\n')
         for name in names:
             sys.stdout.write(name + str(sampling_total[name]) + ' (' + 
-                str(sampling_total[name]*100.0/self.data[name].sum()) + '% of total)\n')
+                str(functions.div(sampling_total[name]*100.0,self.data[name].sum())) + '% of total)\n')
 
         return sampling_total
 
@@ -302,7 +303,7 @@ class Wigs:
         m=deepcopy(self.get(ks[0]))
         if len(ks)>1:
             for k in ks[1:]:m.add(self.get(k))
-        m.foldChange(1.0/len(ks))
+        m.foldChange(functions.div(1.0,len(ks)))
         avg=m.mean()
         from math import log10,log
         if cut=='0':return
@@ -315,13 +316,13 @@ class Wigs:
                 lgpcut=cut
                 cut=int(avg+0.5)
                 ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE))}''')
-                while(0-(float(str(ppois(cut*1.0/extend,avg*1.0/extend)).split()[-1])/log(10))<lgpcut):cut+=1
+                while(0-(functions.div(float(str(ppois(functions.div(cut*1.0,extend),functions.div(avg*1.0,extend))).split()[-1]),log(10)))<lgpcut):cut+=1
         sys.stdout.write('aveage density is ' + str(avg) + ', use clonal signal cutoff ' + str(cut) +  "\n")
         ks=list(self.keys())
         for chr in m.getChrs():
             tchrv=deepcopy(m.data[chr])
             tchrv-=cut#all positive values are count of clonal reads
-            tchrv=((tchrv**2)**0.5+tchrv)/2#remove all neative values
+            tchrv=functions.div(((tchrv**2)**0.5+tchrv),2)#remove all neative values
             tchrv=m.data[chr]-tchrv+numpy.log(tchrv+1)# the addition of '1' is to avoid log(0),"+numpy.log(tchrv+1)" is used to keep the rank order values
             sys.stdout.write(chr+":")
             for k in ks:
@@ -331,8 +332,8 @@ class Wigs:
                 sys.stdout.write('\t'+str(k),'reduced from',temp,'to ')
                 if chr not in twg.data:twg.data[chr]=numpy.array([0.0])
                 if twg.data[chr].size!=tchrv.size:twg.data[chr].resize(tchrv.size,refcheck=0)
-                twg.data[chr]=tchrv*twg.data[chr]/(m.data[chr]+1e-100) # the addition of '1e-100' is to avoid devide by 0
-                sys.stdout.write(twg.data[chr].sum()+ ', percent removed: '+str(100-twg.data[chr].sum()*100.0/temp)+"\n")
+                twg.data[chr]=functions.div(tchrv*twg.data[chr],(m.data[chr]+1e-100)) # the addition of '1e-100' is to avoid devide by 0
+                sys.stdout.write(twg.data[chr].sum()+ ', percent removed: '+str(100-functions.div(twg.data[chr].sum()*100.0,temp))+"\n")
         
         
     def samplingNormalize(self):
@@ -351,7 +352,7 @@ class Wigs:
         tarray=numpy.array([0.0])
         for wig in wigs:
             wsum[wig]=wigs[wig].sum()
-        asum=sum(wsum.values())/len(list(wsum.keys()))
+        asum=functions.div(sum(wsum.values()),len(list(wsum.keys())))
         for k in wigs:
             wig=wigs[k]
             oldsum=wig.sum()
@@ -368,7 +369,7 @@ class Wigs:
                         tarray[tsz]=i
                         tsz+=1
                     i+=1
-                i,tnum,tsz=0,int((num*wig.chrSum(chr)/oldsum)/wig.step),tsz
+                i,tnum,tsz=0,int(functions.div((functions.div(num*wig.chrSum(chr),oldsum)),wig.step)),tsz
                 if oldsum>asum:wig.data[chr]*=0
                 while i<tnum:
                     i+=1

@@ -8,6 +8,8 @@ from reads import reads
 import numpy
 from copy import deepcopy
 from math import log10
+from functions import div
+
 #from functions import merge_peaks_by_head_tail_distance
 def batchOccInRegions(wgs,outname=None,groupname='',outmode='w',chrColID=1,nameColID=0,startColIDpos=3,startColIDneg=4,endColIDpos=4,endColIDneg=3,straColID=2,sep='\t',second_sep=None,step=0,\
                    lines=None,heatMap=True,flankup=3000,flankdn=3000,vcal='mean',excludeP=1,region_size=3000):
@@ -229,8 +231,8 @@ def occAroundPoints(wg,chrColID,nameColID,posColIDpos,posColIDneg,straColID,step
     #vcal: the method to calculate plot value, could be median or mean
     if step<1:step=wg.step
     else:wg.changeStep(step=step)
-    flankup/=step
-    flankdn/=step
+    flankup=div(flankup,step)
+    flankdn=div(flankdn,step)
     if heatmapname==None:heatmapname='heatmapname'
     outf=open(heatmapname+'.xls',"w")
     outf.write('name\tmax\tmin\tsum')
@@ -259,7 +261,7 @@ def occAroundPoints(wg,chrColID,nameColID,posColIDpos,posColIDneg,straColID,step
         for pos in poses:
             if pos=='':continue
             tlst=[0.0]*(flankup+flankdn)
-            tss=int(pos)/step
+            tss=div(int(pos),step)
             if stra=='+':
                 for i in range(0-flankup,flankdn):
                     try:tlst[flankup+i]=wg.data[chr][tss+i]
@@ -290,8 +292,8 @@ def occAroundPoints(wg,chrColID,nameColID,posColIDpos,posColIDneg,straColID,step
         vec.sort()
         if vcal=='mean':
             s=sum(vec[int(num*excludeP):int(num-num*excludeP)])*1.0
-            v=s/(num-num*excludeP*2)#len(vec)
-        elif vcal=='median':v=vec[num/2]
+            v=div(s,(num-num*excludeP*2))#len(vec)
+        elif vcal=='median':v=vec[div(num,2)]
         #outf2.write(str((i-flankup-4)*step)+'\t'+str(v)+'\n')
         dic[(i-flankup-4)*step]=v
     print('')
@@ -308,9 +310,9 @@ def occInRegions(wg,chrColID,nameColID,startColIDpos,startColIDneg,endColIDpos,e
     ostep=owg.step
     if step<1:step=wg.step
     else:wg.changeStep(step=step)
-    flankup/=step
-    flankdn/=step
-    bin_count=region_size/step
+    flankup=div(flankup,step)
+    flankdn=div(flankdn,step)
+    bin_count=div(region_size,step)
     if heatmapname==None:heatmapname='heatmap'
     outf=open(heatmapname+'.xls',"w")
     outf.write('name\tmax\tmin\tsum')
@@ -345,12 +347,12 @@ def occInRegions(wg,chrColID,nameColID,startColIDpos,startColIDneg,endColIDpos,e
         while id<lth:
             tlst=tlst*0
             if starts[id]=='':continue
-            tss,tes,otss,otes=int(starts[id])/step,int(ends[id])/step,int(starts[id])/ostep,int(ends[id])/ostep
+            tss,tes,otss,otes=div(int(starts[id]),step),div(int(ends[id]),step),div(int(starts[id]),ostep),div(int(ends[id]),ostep)
             if stra=='+':
                 for i in range(0-flankup,0):
                     try:tlst[flankup+i]=wg.data[chr][tss+i]
                     except:continue
-                bstep=(otes-otss)*1.0/bin_count
+                bstep=div((otes-otss)*1.0,bin_count)
                 for i in range(0,bin_count):
                     try:tlst[flankup+i]=owg.data[chr][otss+int(i*bstep)]
                     except:continue
@@ -361,7 +363,7 @@ def occInRegions(wg,chrColID,nameColID,startColIDpos,startColIDneg,endColIDpos,e
                 for i in range(0-flankup,0):
                     try:tlst[flankup+i]=wg.data[chr][tss-i]
                     except:continue
-                bstep=(otss-otes)*1.0/bin_count
+                bstep=div((otss-otes)*1.0,bin_count)
                 for i in range(0,bin_count):
                     try:tlst[flankup+i]=owg.data[chr][otss-int(i*bstep)]
                     except:continue
@@ -395,8 +397,8 @@ def occInRegions(wg,chrColID,nameColID,startColIDpos,startColIDneg,endColIDpos,e
         vec.sort()
         if vcal=='mean':
             s=sum(vec[int(num*excludeP):int(num-num*excludeP)])*1.0
-            v=s/(num-num*excludeP*2)#len(vec)
-        elif vcal=='median':v=vec[num/2]
+            v=div(s,(num-num*excludeP*2))#len(vec)
+        elif vcal=='median':v=vec[div(num,2)]
         #outf2.write(str((i-flankup-4)*step)+'\t'+str(v)+'\n')
         dic[(i-flankup-4)*step]=v
     print('')
@@ -441,7 +443,7 @@ def positionSelectorOld(positionLines=[],selection=None,geneFile=None,outGeneFil
             if col[2]=='+':gname,cr,stra,tss=col[0],col[1],col[2],int(col[3])
             else:gname,cr,stra,tss=col[0],col[1],col[2],int(col[4])
             if cr not in gd:gd[cr]={}
-            bin=int(tss/chrbinsize)
+            bin=int(div(tss,chrbinsize))
             if bin not in gd[cr]:gd[cr][bin]={}
             gd[cr][bin][tss]=[stra,gname]
     for line in positionLines[1:]:
@@ -460,7 +462,7 @@ def positionSelectorOld(positionLines=[],selection=None,geneFile=None,outGeneFil
                     try:poses.append(int(col[i]))
                     except:continue
                 minpos,maxpos=min(poses),max(poses)
-                minbin,maxbin=int((minpos-flank)/chrbinsize),int((maxpos+flank)/chrbinsize)
+                minbin,maxbin=int(div((minpos-flank),chrbinsize)),int(div((maxpos+flank),chrbinsize))
                 bins=list(range(minbin,maxbin+1))
                 for bin in bins:
                     if bin not in gd[cr]:continue
@@ -634,7 +636,7 @@ def positionSelectorByGreatTSS(positionLines=[],selection='-5000:1000:1000000',g
             bend,prebend,nxtbend=tgd[cr][bstart][2],tgd[cr][prebstart][2],tgd[cr][nxtbstart][2]
             pos,gname=tgd[cr][bstart][1],tgd[cr][bstart][0]
             minpos,maxpos=min(bstart,max(prebend,pos-sels[2])),max(bend,min(nxtbstart,pos+sels[2]))
-            for bin in range(minpos/chrbinsize,maxpos/chrbinsize+1):
+            for bin in range(div(minpos,chrbinsize),div(maxpos,chrbinsize)+1):
                 if bin not in gd[cr]['TSS']:gd[cr]['TSS'][bin]={}
                 if minpos not in gd[cr]['TSS'][bin]:gd[cr]['TSS'][bin][minpos]=[]
                 gd[cr]['TSS'][bin][minpos].append(['',gname,maxpos,pos])
@@ -647,7 +649,7 @@ def positionSelectorByGreatTSS(positionLines=[],selection='-5000:1000:1000000',g
             try:poses.append(int(col[i]))
             except:continue
         minpos,maxpos=min(poses),max(poses)
-        minbin,maxbin=minpos/chrbinsize,maxpos/chrbinsize
+        minbin,maxbin=div(minpos,chrbinsize),div(maxpos,chrbinsize)
         bins=list(range(minbin,maxbin+1))
         for bin in bins:
             if cr not in gd:continue
@@ -718,7 +720,7 @@ def positionSelectorByGeneStructure(positionLines=[],selection=None,geneFile=Non
             if 'TSS' not in gd[cr]:gd[cr]['TSS']={}
             if stra=='+':gname,cr,stra,pos=col[0],cr,stra,int(col[3])
             else:gname,cr,stra,pos=col[0],cr,stra,int(col[4])
-            bin=int(pos/chrbinsize)
+            bin=int(div(pos,chrbinsize))
             if bin not in gd[cr]['TSS']:gd[cr]['TSS'][bin]={}
             if pos not in gd[cr]['TSS'][bin]:gd[cr]['TSS'][bin][pos]=[]
             gd[cr]['TSS'][bin][pos].append([stra,gname,pos])
@@ -727,7 +729,7 @@ def positionSelectorByGeneStructure(positionLines=[],selection=None,geneFile=Non
             if 'TTS' not in gd[cr]:gd[cr]['TTS']={}
             if stra=='+':gname,cr,stra,pos=col[0],cr,stra,int(col[4])
             else:gname,cr,stra,pos=col[0],cr,stra,int(col[3])
-            bin=int(pos/chrbinsize)
+            bin=int(div(pos,chrbinsize))
             if bin not in gd[cr]['TTS']:gd[cr]['TTS'][bin]={}
             if pos not in gd[cr]['TTS'][bin]:gd[cr]['TTS'][bin][pos]=[]
             gd[cr]['TTS'][bin][pos].append([stra,gname,pos])
@@ -735,7 +737,7 @@ def positionSelectorByGeneStructure(positionLines=[],selection=None,geneFile=Non
             if 'CSS' not in gd[cr]:gd[cr]['CSS']={}
             if stra=='+':gname,cr,stra,pos=col[0],cr,stra,int(col[5])
             else:gname,cr,stra,pos=col[0],cr,stra,int(col[6])
-            bin=int(pos/chrbinsize)
+            bin=int(div(pos,chrbinsize))
             if bin not in gd[cr]['CSS']:gd[cr]['CSS'][bin]={}
             if pos not in gd[cr]['CSS'][bin]:gd[cr]['CSS'][bin][pos]=[]
             gd[cr]['CSS'][bin][pos].append([stra,gname,pos])
@@ -743,7 +745,7 @@ def positionSelectorByGeneStructure(positionLines=[],selection=None,geneFile=Non
             if 'CTS' not in gd[cr]:gd[cr]['CTS']={}
             if stra=='+':gname,cr,stra,pos=col[0],cr,stra,int(col[6])
             else:gname,cr,stra,pos=col[0],cr,stra,int(col[5])
-            bin=int(pos/chrbinsize)
+            bin=int(div(pos,chrbinsize))
             if bin not in gd[cr]['CTS']:gd[cr]['CTS'][bin]={}
             if pos not in gd[cr]['CTS'][bin]:gd[cr]['CTS'][bin][pos]=[]
             gd[cr]['CTS'][bin][pos].append([stra,gname,pos])
@@ -753,7 +755,7 @@ def positionSelectorByGeneStructure(positionLines=[],selection=None,geneFile=Non
             else:gname,cr,stra,poss=col[0],cr,stra,col[9][:-1].split(',')
             for pos in poss:
                 pos=int(pos)
-                bin=int(pos/chrbinsize)
+                bin=int(div(pos,chrbinsize))
                 if bin not in gd[cr]['ESS']:gd[cr]['ESS'][bin]={}
                 if pos not in gd[cr]['ESS'][bin]:gd[cr]['ESS'][bin][pos]=[]
                 gd[cr]['ESS'][bin][pos].append([stra,gname,pos])
@@ -763,7 +765,7 @@ def positionSelectorByGeneStructure(positionLines=[],selection=None,geneFile=Non
             else:gname,cr,stra,poss=col[0],cr,stra,col[8][:-1].split(',')
             for pos in poss:
                 pos=int(pos)
-                bin=int(pos/chrbinsize)
+                bin=int(div(pos,chrbinsize))
                 if bin not in gd[cr]['ETS']:gd[cr]['ETS'][bin]={}
                 if pos not in gd[cr]['ETS'][bin]:gd[cr]['ETS'][bin][pos]=[]
                 gd[cr]['ETS'][bin][pos].append([stra,gname,pos])
@@ -778,7 +780,7 @@ def positionSelectorByGeneStructure(positionLines=[],selection=None,geneFile=Non
                 start,end=int(starts[i]),int(ends[i])
                 #print start,end,chrbinsize
                 for pos in range(start,end,chrbinsize):
-                    bin=int(pos/chrbinsize)
+                    bin=int(div(pos,chrbinsize))
                     if bin not in gd[cr]['exon']:gd[cr]['exon'][bin]={}
                     if start not in gd[cr]['exon'][bin]:gd[cr]['exon'][bin][start]=[]
                     gd[cr]['exon'][bin][start].append([stra,gname,end])
@@ -792,7 +794,7 @@ def positionSelectorByGeneStructure(positionLines=[],selection=None,geneFile=Non
                 #for start in starts:
                 start,end=int(ends[i-1]),int(starts[i])
                 for pos in range(start,end,chrbinsize):
-                    bin=int(pos/chrbinsize)
+                    bin=int(div(pos,chrbinsize))
                     if bin not in gd[cr]['intron']:gd[cr]['intron'][bin]={}
                     if start not in gd[cr]['intron'][bin]:gd[cr]['intron'][bin][start]=[]
                     gd[cr]['intron'][bin][start].append([stra,gname,end])
@@ -800,7 +802,7 @@ def positionSelectorByGeneStructure(positionLines=[],selection=None,geneFile=Non
             if 'gene' not in gd[cr]:gd[cr]['gene']={}
             gname,cr,stra,start,end=col[0],cr,stra,int(col[3]),int(col[4])
             for pos in range(start,end,chrbinsize):
-                bin=int(pos/chrbinsize)
+                bin=int(div(pos,chrbinsize))
                 if bin not in gd[cr]['gene']:gd[cr]['gene'][bin]={}
                 if start not in gd[cr]['gene'][bin]:gd[cr]['gene'][bin][start]=[]
                 gd[cr]['gene'][bin][start].append([stra,gname,end])
@@ -826,7 +828,7 @@ def positionSelectorByGeneStructure(positionLines=[],selection=None,geneFile=Non
                 try:poses.append(int(col[i]))
                 except:continue
             minpos,maxpos=min(poses),max(poses)
-            minbin,maxbin=int((minpos-flank)/chrbinsize),int((maxpos+flank)/chrbinsize)
+            minbin,maxbin=int(div((minpos-flank),chrbinsize)),int(div((maxpos+flank),chrbinsize))
             bins=list(range(minbin,maxbin+1))
             for bin in bins:
                 if cr not in gd:continue
@@ -1096,7 +1098,7 @@ def plot(dic={'name':{}},outname='',main='',region_size=0,nrow=2,ncol=2,xmin=Non
         rcode+='axis(side=1,at=c('+','.join(at)+'),labels=c('+','.join(lb)+'))\n'
         lth=poses[-1]-poses[0]+poses[1]-poses[0]
         #print poses[-1],poses[0]
-        lth=int(lth/6)
+        lth=int(div(lth,6))
         #tlth=str(lth)
         #if len(tlth)>3:
         at,lb=[],[]
@@ -1157,25 +1159,25 @@ def vioplot(dic={'name':[]},outname='',main='',nrow=2,ncol=2,ymin=None,ymax=None
     
 def occPSD0(wg,outname=None):
     psd=r('''function(q){return(spec.pgram(q,plot = FALSE)$spec)}''')
-    lth=100000/wg.step
+    lth=div(100000,wg.step)
     d=wg.data
-    spe=[0.0]*(lth/2)
+    spe=[0.0]*(div(lth,2))
     wn=0
     #print 'calculating spectrum'
     for cr in d:
         print(cr)
         sz=d[cr].size
-        for i in range(0,sz-lth,lth/2):
+        for i in range(0,sz-lth,div(lth,2)):
             wn+=1
             if wn%100==0:print(wn,'window calculated ...')
             v=psd(FloatVector(d[cr][i:(i+lth)]))
-            for j in range(lth/2):spe[j]+=v[j]
+            for j in range(div(lth,2)):spe[j]+=v[j]
         print(wn,'window calculated.')
     if outname!=None:fo=open(outname+'.xls','w')
     dic={}
-    for j in range(int(lth*wg.step/250),int(lth*wg.step/100+1)):
-        dic[lth*wg.step*1.0/j]=spe[j]/wn
-        if outname!=None:fo.write(str(lth*wg.step*1.0/j)+'\t'+str(spe[j]/wn)+'\n')
+    for j in range(int(div(lth*wg.step,250)),int(div(lth*wg.step,100)+1)):
+        dic[div(lth*wg.step*1.0,j)]=div(spe[j],wn)
+        if outname!=None:fo.write(str(div(lth*wg.step*1.0,j))+'\t'+str(div(spe[j],wn))+'\n')
     return dic
 def occPSD(wg,outname=None):
     cor=r('''function(q1,q2){return(cor(q1,q2))}''')
@@ -1197,7 +1199,7 @@ def occPSD(wg,outname=None):
             dic[i]+=v*sz
     if outname!=None:fo=open(outname+'.xls','w')
     for i in range(mi,ma):
-        dic[i]=dic[i]/tsz
+        dic[i]=div(dic[i],tsz)
         if outname!=None:fo.write(str(i)+'\t'+str(dic[i])+'\n')
     return dic
 def positionDistanceDistribution(dic,outname=None,min=100,max=250,step=1):
@@ -1218,16 +1220,16 @@ def positionDistanceDistribution(dic,outname=None,min=100,max=250,step=1):
         poses.sort()
         lth=len(poses)
         for i in range(1,lth):
-            d=int((poses[i]-poses[i-1])/step)
+            d=int(div((poses[i]-poses[i-1]),step))
             if d not in dis:dis[d]=1
             else:dis[d]+=1
     if outname!=None:fo=open(outname+'.xls','w')
     if min==None:min=min(dis.keys())
     if max==None:max=max(dis.keys())
     odic={}
-    for d in range(int(min/step),int(max/step)):
+    for d in range(int(div(min,step)),int(div(max,step))):
         if d not in dis:dis[d]=0
-        dis[d]=dis[d]*100.0/ct  #change to percentage
+        dis[d]=div(dis[d]*100.0,ct)  #change to percentage
         odic[d*step]=dis[d]
         if outname!=None:fo.write( str(d*step)+'\t'+str(dis[d])+'\n')
     return odic
@@ -1276,16 +1278,16 @@ def positionValDistribution(dic,outname=None,min=0,max=1500,step=3):
     for cr in dic:
         ct+=len(dic[cr])
         for v in list(dic[cr].values()):
-            v=int(v/step+0.5)
+            v=int(div(v,step)+0.5)
             if v not in vdic:vdic[v]=1
             else:vdic[v]+=1
     if ct<1:return {}
     if outname!=None:fo=open(outname+'.xls','w')
     odic={}
     #print int(min/step),int(max/step)
-    for d in range(int(min/step),int(max/step)):
+    for d in range(int(div(min,step)),int(div(max,step))):
         if d not in vdic:vdic[d]=0
-        vdic[d]=vdic[d]*100.0/ct  #change to percentage
+        vdic[d]=div(vdic[d]*100.0,ct)  #change to percentage
         if outname!=None:fo.write( str(d*step)+'\t'+str(vdic[d])+'\n')
         odic[d*step]=vdic[d]
     rodic={}
@@ -1333,7 +1335,7 @@ def positionAroundPoint(smts,outname=None,flankup=2500,flankdn=2500,step=10,chrC
     if outname!=None:outf=open(outname+'.xls',"w")
     for k in range(0-flankup,flankdn,step):
         if k not in dis:dis[k]=0
-        dis[k]=dis[k]*1.0/num
+        dis[k]=div(dis[k]*1.0,num)
         if outname!=None:outf.write(str(k)+"\t"+str(dis[k])+"\n")
     return dis
 
@@ -1540,7 +1542,7 @@ def positionDicMinMax(dic,lowPercent=0,highPercent=100):
             values+=list(dic[name][chr].values())
     values.sort()
     lth=len(values)
-    outmin,outmax=values[int(lth*lowPercent/100.0)],values[int(lth*highPercent/100.0)-1]
+    outmin,outmax=values[int(div(lth*lowPercent,100.0))],values[int(div(lth*highPercent,100.0))-1]
 
     for name in dic:
         dvalues[name]=[]
@@ -1565,10 +1567,10 @@ def translocationReads(file,bindic={},binSize=1000000,outReadsFile='out.sam',out
         if col[0]=='@SQ':
             chr,clen=col[1][3:],int(col[2][3:])+step
             if chr not in bindic:bindic[chr]={}
-            for bin in range(clen/binSize+1):
+            for bin in range(div(clen,binSize)+1):
                 if bin not in bindic[chr]:bindic[chr][bin]={}
             transwig.data[chr]=numpy.array([0.0])
-            transwig.data[chr].resize(clen/step,refcheck=0)
+            transwig.data[chr].resize(div(clen,step),refcheck=0)
         hlines.append(line)
         line=infile.readline()
     #rdlth=len(line.split('\t')[9])
@@ -1632,8 +1634,8 @@ def translocationReads(file,bindic={},binSize=1000000,outReadsFile='out.sam',out
             for i in range(len(t2)):
                 if t2[i]=='M' :#all matched nucleotide will be counted into wiggle format data.
                     end=start+t1[i]
-                    allwig.data[col[2]][start/step:end/step]+=1.0/mlth
-                    if unique and tbre and trans:transwig.data[col[2]][start/step:end/step]+=1.0#/rdlth
+                    allwig.data[col[2]][div(start,step):div(end,step)]+=div(1.0,mlth)
+                    if unique and tbre and trans:transwig.data[col[2]][div(start,step):div(end,step)]+=1.0#/rdlth
                     start=end
                 elif t2[i]=='D':start=start+t1[i]
                 elif t2[i]=='N':start=start+t1[i]
@@ -1649,12 +1651,12 @@ def translocationReads(file,bindic={},binSize=1000000,outReadsFile='out.sam',out
     if transWigFile!=None:transwig.save(transWigFile)
     
     print('all raw reads:',nt+1)
-    print('unmappable:',nu,nu*100.0/nt,'%')
-    print('low map quality (non-unique):',nl,nl*100.0/nt,'%')
-    if inter:print('inter-chromosome translocated and unique:',ne,ne*100.0/nt,'%')
-    if intra:print('intra-chromosome translocated and unique:',na,na*100.0/nt,'%')
-    print('other unique:',no,no*100.0/nt,'%')
-    print('All unique:',ne+na+no,(ne+na+no)*100.0/nt,'%')
+    print('unmappable:',nu,div(nu*100.0,nt),'%')
+    print('low map quality (non-unique):',nl,div(nl*100.0,nt),'%')
+    if inter:print('inter-chromosome translocated and unique:',ne,div(ne*100.0,nt),'%')
+    if intra:print('intra-chromosome translocated and unique:',na,div(na*100.0,nt),'%')
+    print('other unique:',no,div(no*100.0,nt),'%')
+    print('All unique:',ne+na+no,div((ne+na+no)*100.0,nt),'%')
     if 'all' not in readsCount:readsCount['all']=nt
     else:readsCount['all']+=nt
     if 'unmappable' not in readsCount:readsCount['unmappable']=nu
@@ -1702,26 +1704,26 @@ def translocationLinks(peaks,samFile,linkfile,bindic={},binSize=1000000,wsize=50
         for start in starts:
             end = peaks[cr][start]
             if wstep>0:
-                for nstart in range(start-wsize/2,end-wsize/2,wstep):
+                for nstart in range(start-div(wsize,2),end-div(wsize,2),wstep):
                     if nstart<0:nstart=0
                     id+=1
                     lks[id],bn[id]={},0
                     pklines.append('\t'.join([cr,str(start),str(end),str(nstart),str(nstart+wsize)]))
-                    sBin,eBin=nstart/binSize,(nstart+wsize)/binSize
+                    sBin,eBin=div(nstart,binSize),div((nstart+wsize),binSize)
                     for bin in range(sBin,eBin+1):
                         if bin not in pks[cr]:pks[cr][bin]={}
                         pks[cr][bin][nstart]=[nstart+wsize,id]
             else:
                 if end-start<wsize:
-                    mid=(start+end)/2
-                    nstart,nend=mid-wsize/2,mid+wsize/2
+                    mid=div((start+end),2)
+                    nstart,nend=mid-div(wsize,2),mid+div(wsize,2)
                     if nstart<0:nstart,nend=0,wsize
                 else:
                     nstart,nend=start,end
                 id+=1
                 lks[id],bn[id]={},0
                 pklines.append('\t'.join([cr,str(start),str(end),str(nstart),str(nend)]))
-                sBin,eBin=nstart/binSize,nend/binSize
+                sBin,eBin=div(nstart,binSize),div(nend,binSize)
                 for bin in range(sBin,eBin+1):
                     if bin not in pks[cr]:pks[cr][bin]={}
                     pks[cr][bin][nstart]=[nend,id]
@@ -1735,7 +1737,7 @@ def translocationLinks(peaks,samFile,linkfile,bindic={},binSize=1000000,wsize=50
         col=line[:-1].split('\t')
         cr1,cr2,pos1,pos2=col[2],col[6],int(col[3]),int(col[7])
         if cr2=='=':cr2=cr1
-        bin1,bin2=pos1/binSize,pos2/binSize
+        bin1,bin2=div(pos1,binSize),div(pos2,binSize)
         id1,id2=[],[]
         for start in pks[cr1][bin1]:
             if pos1>start and pos1<pks[cr1][bin1][start][0]:id1.append(pks[cr1][bin1][start][1])
@@ -1773,7 +1775,7 @@ def translocationLinks(peaks,samFile,linkfile,bindic={},binSize=1000000,wsize=50
             if tk in lks[fk]:ov=lks[fk][tk]
             else:ov=0
             pv=str(fisherTest(ov,bn[fk],bn[tk],tn)).split()[-1]
-            exp=bn[tk]*bn[fk]*1.0/tn
+            exp=div(bn[tk]*bn[fk]*1.0,tn)
             lkf.write('\t'.join(    [pklines[fk],str(int(bn[fk])),pklines[tk],str(int(bn[tk])),str(int(ov)),str(exp),str(pv)]   )+'\n')
     lkf.close()
     #print tn

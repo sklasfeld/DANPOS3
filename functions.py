@@ -11,6 +11,25 @@ from math import log10,log,sqrt
 from rpy2.robjects import r, FloatVector
 import re,sys
 
+# python2 divides ints differently
+# than python3. Since this code was 
+# originally written in python2 we
+# correct the code using the following
+# two commands:
+
+def isint(x):
+    if type(x).__module__ == "numpy":
+        return(x.dtype == np.integer)
+    else:
+        return(isinstance(x,int))
+
+
+def div(a,b):
+    if isint(a) and isint(b):return(a//b)
+    else:return(a/b)
+
+
+# This converts a numpy number to a standard type
 def unnumpy(foo):
     if type(foo).__module__ == "numpy":
         foo = foo.item()
@@ -36,7 +55,7 @@ def danpos(tpath=None,tbg=None,opath='./',\
     ###### step 1 start --- parameter checking and proccessing--- ######
     starttime=time()
     rd,hdiff=distance,1-ratio#int(distance*1.6/(2*step))*step
-    fcut=float(str(r.sd(FloatVector(list(range(0-rd,rd+step,step))))).split()[-1])*(0.95-step/(2.0*rd))
+    fcut=float(str(r.sd(FloatVector(list(range(0-rd,rd+step,step))))).split()[-1])*(0.95-div(step,(2.0*rd)))
     print('rd',rd,', step',step,' fcut,',fcut)
     
     pairs,groups=pathParser(tpath=tpath)
@@ -110,7 +129,7 @@ def danpos(tpath=None,tbg=None,opath='./',\
                     pooledbggroups[bggroupname]=bggroups[bggroupname].pop(bgfilenames[0])
                     if len(bgfilenames)>1:
                         for bgfilename in bgfilenames[1:]:pooledbggroups[bggroupname].add(bggroups[bggroupname].pop(bgfilename))
-                        pooledbggroups[bggroupname].foldChange(1.0/len(bgfilenames))
+                        pooledbggroups[bggroupname].foldChange(div(1.0,len(bgfilenames)))
                         #pooledbggroups[bggroupname].save(os.path.join(opath,'pooled',bggroupname+".wig"),format=wgfmt,step=step)
                     if not os.path.isfile(os.path.join(opath,'pooled',bggroupname+".wig")):pooledbggroups[bggroupname].save(os.path.join(opath,'pooled',bggroupname+".wig"),format=wgfmt,step=step)
             for filename in list(groups[groupname].keys()):
@@ -206,7 +225,7 @@ def danpos(tpath=None,tbg=None,opath='./',\
         pooledgroups[groupname]=groups[groupname].pop(filenames[0])
         if len(filenames)>1:
             for filename in filenames[1:]:pooledgroups[groupname].add(groups[groupname].pop(filename))
-            pooledgroups[groupname].foldChange(1.0/len(filenames))
+            pooledgroups[groupname].foldChange(div(1.0,len(filenames)))
         if (not save) and (smooth_width>1):pooledgroups[groupname].smooth(smooth_width)#if not save, the smoothing will be done here; else it have been done before replicate position calling
         if (len(filenames)>1) or (smooth_width>1) or (cut!='0') or (nor!='N') or (tbg!=None) or (amount!=None) or (not all_wig):
             pooledgroups[groupname].save(os.path.join(opath,'pooled',groupname+addname+"wig"),format=wgfmt,step=step)
@@ -418,7 +437,7 @@ def danpos(tpath=None,tbg=None,opath='./',\
             #print 'doing for',groupnames[0],'and',groupnames[1],'...'
             tgs=0
             for cr in dfgroups[dfname].data:tgs+=dfgroups[dfname].data[cr].size
-            fdrsimu=min(100000,max(10000,tgs/1000))
+            fdrsimu=min(100000,max(10000,div(tgs,1000)))
             if call_position==1:
                 print('\nposition level integrative analysis for', dfname, '...')
                 #if fdr==1:
@@ -465,8 +484,8 @@ def danpos(tpath=None,tbg=None,opath='./',\
     ###### step 13 end --- map differential positions to nucleosome positions --- ######
     
     seconds=int(time()-starttime)
-    hours=seconds/3600
-    minutes=(seconds-hours*3600)/60
+    hours=div(seconds,3600)
+    minutes=div((seconds-hours*3600),60)
     seconds=seconds-hours*3600-minutes*60
     print('\ntotal time elapsed:',hours,'hours',minutes,'minutes',seconds,"seconds\n\njob done, cheers!\n\n")
 def pathParser(tpath):
@@ -610,7 +629,7 @@ def region_differential(file1,file2,gainFile,lossFile,ofile=None,widthFDRlist=No
         if col1[:3]!=col2[:3]:print('Wrong:',col1[:3],col2[:3])
         w1,w2=int(col1[4]),int(col2[4])
         w=int(col1[2])-int(col2[1])
-        t1,t2=float(col1[5])*step/w,float(col2[5])*step/w
+        t1,t2=div(float(col1[5])*step,w),div(float(col2[5])*step,w)
         s1,s2=float(col1[6]),float(col2[6])#summit height
         if w1==w2:wdiff =0
         else:wdiff=log10PropTest([w1,w2,w2,w1])
@@ -619,11 +638,37 @@ def region_differential(file1,file2,gainFile,lossFile,ofile=None,widthFDRlist=No
         if s1==s2:sdiff=0
         else:sdiff=float(str(log10ppois(unnumpy(max(s1,s2)+1),unnumpy(min(s1,s2)+1))).split()[-1])
         gdiff,ldiff=float(gcol[6]),float(lcol[6])# (0-log10Pval) of gain and loss
-        if fdr==1:wfdr,tfdr,sfdr,gfdr,lfdr=findRank(widthFDRlist,0-wdiff)*1.0/lw,findRank(aucFDRlist,0-tdiff)*1.0/lt,findRank(smtFDRlist,0-sdiff)*1.0/ls,findRank(smtFDRlist,gdiff)*1.0/ls,findRank(smtFDRlist,ldiff)*1.0/ls
+        if fdr==1:
+            wfdr = div(findRank(widthFDRlist,0-wdiff)*1.0,lw)
+            tfdr = div(findRank(aucFDRlist,0-tdiff)*1.0,lt)
+            sfdr = div(findRank(smtFDRlist,0-sdiff)*1.0,ls)
+            gfdr = div(findRank(smtFDRlist,gdiff)*1.0,ls)
+            lfdr = div(findRank(smtFDRlist,ldiff)*1.0,ls)
         else:wfdr,tfdr,sfdr,gfdr,lfdr='-','-','-','-','-'
         #print '\t'.join([str(wdiff),str(tdiff),str(sdiff)])
         if ofile!=None:
-            try:fo.write('\t'.join(col1[:4]+[str(s1),str(s2),str(log(max(s2,1)/max(s1,1))/log(2)),str(sdiff),str(sfdr),str(w1),str(w2),str(log(max(w2*1.0,1.0)/max(w1,1))/log(2)),str(wdiff),str(wfdr),str(t1),str(t2),str(log(max(t2,1)/max(t1,1))/log(2)),str(tdiff),str(tfdr),str(0-gdiff),str(gfdr),str(0-ldiff),str(lfdr),str(0-max(gdiff,ldiff)),str(min(gfdr,lfdr))])+'\n')#+dcol[4:]+col1[4:-1]+col2[4:-1])+'\n')
+            try:fo.write('\t'.join(
+                    col1[:4]+[str(s1),
+                    str(s2),
+                    str(div(log(div(max(s2,1),max(s1,1))),log(2))),
+                    str(sdiff),
+                    str(sfdr),
+                    str(w1),
+                    str(w2),
+                    str(div(log(div(max(w2*1.0,1.0),max(w1,1))),log(2))),
+                    str(wdiff),
+                    str(wfdr),
+                    str(t1),
+                    str(t2),
+                    str(div(log(div(max(t2,1),max(t1,1))),log(2))),
+                    str(tdiff),
+                    str(tfdr),
+                    str(0-gdiff),
+                    str(gfdr),
+                    str(0-ldiff),
+                    str(lfdr),
+                    str(0-max(gdiff,ldiff)),
+                    str(min(gfdr,lfdr))])+'\n')#+dcol[4:]+col1[4:-1]+col2[4:-1])+'\n')
             except: print(w2,w1,t2,t1,s2,s1)
         #print '\t'.join(col1[:4]+[str(wdiff),str(wfdr),str(tdiff),str(tfdr),str(sdiff),str(sfdr)])
         i+=1
@@ -636,7 +681,8 @@ def peakFDR(peakFile1,peakFile2=None,wg1=None,wg2=None,fdrsimu=1000000,cut=5):
     step=wg1.step
     while i<lth:
         col=pk[i].split()
-        col[1],col[2]=int(col[1])/step,int(col[2])/step
+        col[1]=div(int(col[1])/step)
+        col[2]=div(int(col[2]),step)
         pk[i]=col[:3]
         i+=1
     chrs={}
@@ -655,8 +701,8 @@ def peakFDR(peakFile1,peakFile2=None,wg1=None,wg2=None,fdrsimu=1000000,cut=5):
         w2=0
         s1=wg1.data[cr][int(start):int(end)].max()
         s2=wg2.data[cr][int(start):int(end)].max()
-        t1=wg1.data[cr][int(start):int(end)].sum()*step/width
-        t2=wg2.data[cr][int(start):int(end)].sum()*step/width
+        t1=div(wg1.data[cr][int(start):int(end)].sum()*step,width)
+        t2=div(wg2.data[cr][int(start):int(end)].sum()*step,width)
         k=start
         while k<end:
             if wg1.data[cr][int(k)]>=cut:w1+=step
@@ -1031,17 +1077,17 @@ def allPositionsInOneFile(ofile='result.xls',controlPositionFile=None,treatPosit
     for line in open(controlPositionFile).readlines()[1:]:
         col=line.split()
         if col[0] not in cpd:cpd[col[0]],tpd[col[0]],dpd[col[0]]={},{},{}
-        cpd[col[0]][int(col[3])/step]=-1
+        cpd[col[0]][div(int(col[3]),step)]=-1
     for line in open(treatPositionFile).readlines()[1:]:
         col=line.split()
         if col[0] not in tpd:cpd[col[0]],tpd[col[0]],dpd[col[0]]={},{},{}
-        tpd[col[0]][int(col[3])/step]=-1
+        tpd[col[0]][div(int(col[3]),step)]=-1
     for file in [gainPositionFile,lossPositionFile]:
         if file==None:continue
         for line in open(file).readlines()[1:]:
             col=line.split()
             if col[0] not in dpd:cpd[col[0]],tpd[col[0]],dpd[col[0]]={},{},{}
-            dpd[col[0]][int(col[3])/step]=-1
+            dpd[col[0]][div(int(col[3]),step)]=-1
     
     print('calculating differential values for positions...')
     ppois=r('''function(q,avg){return(0-ppois(q,avg,lower.tail=FALSE,log=TRUE)/log(10))}''')
@@ -1063,25 +1109,25 @@ def allPositionsInOneFile(ofile='result.xls',controlPositionFile=None,treatPosit
         cposes.sort()
         for cpos in cposes:
             p1,p2=cpos,c2tDic[cr][cpos][0] # cpos is the control nucleosome position position, c2tDic[cr][cpos][0] is the treatment nucleosome position position
-            if p1/step>=cwig.data[cr].size:continue #add by kaifu on Mar 10, 2013
-            if p2/step>=twig.data[cr].size:continue #add by kaifu on Mar 10, 2013
+            if div(p1,step)>=cwig.data[cr].size:continue #add by kaifu on Mar 10, 2013
+            if div(p2,step)>=twig.data[cr].size:continue #add by kaifu on Mar 10, 2013
             temp=log10fuztest(pc=p1,pt=p2,cr=cr,cwig=cwig,twig=twig,rd=rd)
             dp,sd1,sd2=temp#,float(r.sd(FloatVector(temp[1]))[0]),float(r.sd(FloatVector(temp[2]))[0])
             nuc+=1
 
             if test=='P':
-                if cwig.data[cr][p1//step]>twig.data[cr][p2//step]:
-                    dp1=float(ppois(unnumpy(cwig.data[cr][p1//step]), unnumpy(max(twig.data[cr][p2//step],1)))[0])
+                if cwig.data[cr][div(p1,step)]>twig.data[cr][div(p2,step)]:
+                    dp1=float(ppois(unnumpy(cwig.data[cr][div(p1,step)]), unnumpy(max(twig.data[cr][div(p2,step)],1)))[0])
                 else:
-                    dp1=float(ppois(unnumpy(twig.data[cr][p2//step]), unnumpy(max(cwig.data[cr][p1//step],1)))[0])
+                    dp1=float(ppois(unnumpy(twig.data[cr][div(p2,step)]), unnumpy(max(cwig.data[cr][div(p1,step)],1)))[0])
 
             if len(c2tDic[cr][cpos])<2:# no differential position is assigned to c2tDic[cr][cpos] (cpos is the control nucleosome position position, c2tDic[cr][cpos][0] is the treatment nucleosome position position)
                 minp,maxp,maxv=min(p1,p2,dwig.data[cr].size*step-step,cwig.data[cr].size*step-step,twig.data[cr].size*step-step),max(p1,p2),0 # '*step' is add by kaifu on Mar 6, 2013
-                midp=(minp+maxp)/2
+                midp=div((minp+maxp),2)
                 minp,maxp=max(0,midp-dis),min(midp+dis,dwig.data[cr].size*step-step,cwig.data[cr].size*step-step,twig.data[cr].size*step-step) # '*step' is add by kaifu on Mar 6, 2013
-                p=(minp+maxp)/(2*step) #replace '2' by '2*step' by kaifu on Mar 6, 2013
-                tp=(minp+maxp)/(2*step)
-                tdis=(maxp-minp)/(2*step)
+                p=div((minp+maxp),(2*step)) #replace '2' by '2*step' by kaifu on Mar 6, 2013
+                tp=div((minp+maxp),(2*step))
+                tdis=div((maxp-minp),(2*step))
                 while tdis>=0:
                     if abs(maxv)>abs(dwig.data[cr][int(tp+tdis)]):
                         maxv=dwig.data[cr][tp+tdis]
@@ -1092,10 +1138,10 @@ def allPositionsInOneFile(ofile='result.xls',controlPositionFile=None,treatPosit
                     tdis-=1
                 c2tDic[cr][cpos].append(int(p*step))
             p=c2tDic[cr][cpos][1]
-            dp2=abs(dwig.data[cr][p//step])
+            dp2=abs(dwig.data[cr][div(p,step)])
             if len(c2tDic[cr][cpos][1:])>2:
                 for tp in c2tDic[cr][cpos][1:]:
-                    tdp2=abs(dwig.data[cr][tp//step]) #corrected by Kaifu Chen on Feb 13,2013, previously it was: tdp2=dwig.data[cr][tp/step]
+                    tdp2=abs(dwig.data[cr][div(tp,step)]) #corrected by Kaifu Chen on Feb 13,2013, previously it was: tdp2=dwig.data[cr][tp/step]
                     if tdp2>dp2:
                         p=tp
                         dp2=tdp2
@@ -1107,34 +1153,50 @@ def allPositionsInOneFile(ofile='result.xls',controlPositionFile=None,treatPosit
             #else:
             strp=str(p)
             if cr not in cpd:strp1='-'
-            elif p1//step not in cpd[cr]:strp1='-'
+            elif div(p1,step) not in cpd[cr]:strp1='-'
             else:strp1=str(p1)
             if cr not in tpd:strp2='-'
-            elif p2//step not in tpd[cr]:strp2='-'
+            elif div(p2,step) not in tpd[cr]:strp2='-'
             else:strp2=str(p2)
             if strp1=='-' and strp2=='-':strp1,strp2=strp,strp
             elif strp1=='-':strp1==strp2
             elif strp2=='-':strp2=strp1
-            middle=(p1+p2)/2
-            olines.append([cr,str(middle-dis),str(middle+dis),str(middle),str(strp1),str(strp2),str(strp),str(abs(p2-p1)),str(cwig.data[cr][p1//step]),str(twig.data[cr][p2//step]),\
-                           str(log(max(twig.data[cr][p2//step],1)/max(cwig.data[cr][p2//step],1))/log(2)),\
-            str(0-dp1),'-',str(cwig.data[cr][p//step]),str(twig.data[cr][p//step]),\
-            str(log(max(1,twig.data[cr][p//step])/max(cwig.data[cr][p//step],1))/log(2)),str(0-dp2),'-',str(sd1),str(sd2),str(log(max(1,sd2)/max(sd1,1))/log(2)),str(dp),'-',nuc])
+            middle=div((p1+p2),2)
+            olines.append([cr, \
+                str(middle-dis), \
+                str(middle+dis), \
+                str(middle), \
+                str(strp1), \
+                str(strp2), \
+                str(strp), \
+                str(abs(p2-p1)), \
+                str(cwig.data[cr][div(p1,step)]), \
+                str(twig.data[cr][div(p2,step)]), \
+                str(div(log(div(max(twig.data[cr][div(p2,step)],1),max(cwig.data[cr][div(p2,step)],1))),log(2))),\
+                str(0-dp1), '-', \
+                str(cwig.data[cr][div(p,step)]), \
+                str(twig.data[cr][div(p,step)]), \
+                str(div(log(div(max(1,twig.data[cr][div(p,step)]),max(cwig.data[cr][div(p,step)],1))),log(2))), \
+                str(0-dp2),'-', \
+                str(sd1), \
+                str(sd2), \
+                str(div(log(div(max(1,sd2),max(sd1,1))),log(2))), \
+                str(dp),'-',nuc])
     if fdr==1:
         if fdrsimu==0:
             tgs=0
             for cr in dwig.data:tgs+=dwig.data[cr].size
-            fdrsimu=min(100000,max(10000,tgs/1000))
+            fdrsimu=min(100000,max(10000,div(tgs,1000)))
         print('calculating occupancy differential FDR ...')
         if type(occFDRlist).__module__=='builtins' and occFDRlist==None:
             occFDRlist=occFDR(dwig=dwig,simu=fdrsimu,regions=fdrRegions)
-        for i in range(len(dr1)):dr1[i]=findRank(occFDRlist,dr1[i])*1.0/fdrsimu
-        for i in range(len(dr2)):dr2[i]=findRank(occFDRlist,dr2[i])*1.0/fdrsimu
+        for i in range(len(dr1)):dr1[i]=div(findRank(occFDRlist,dr1[i])*1.0,fdrsimu)
+        for i in range(len(dr2)):dr2[i]=div(findRank(occFDRlist,dr2[i])*1.0,fdrsimu)
         
         print('calculating fuzziness differential FDR ...')
         if type(fuzFDRlist).__module__=='builtins' and fuzFDRlist==None:
             fuzFDRlist=fuzFDR(cwig=cwig,twig=twig,simu=fdrsimu,rd=rd,regions=fdrRegions)
-        for i in range(len(dr)):dr[i]=findRank(fuzFDRlist,0-dr[i])*1.0/fdrsimu
+        for i in range(len(dr)):dr[i]=div(findRank(fuzFDRlist,0-dr[i])*1.0,fdrsimu)
 
     for line in olines:
         if fdr==1:line[12],line[17],line[-2]=str(dr1[line[-1]]),str(dr2[line[-1]]),str(dr[line[-1]])
@@ -1159,7 +1221,7 @@ def fuzFDR(cwig,twig,simu=10000,rd=None,regions=None):
     id=0
     for cr in regions:
         for start in regions[cr]:
-            count=simu*(regions[cr][start]-start)/gs
+            count=div(simu*(regions[cr][start]-start),gs)
             rstart,rend=start-50,regions[cr][start]+50
             if rstart<rd+cwig.step:rstart=rd+cwig.step
             if cr not in cwig.data:continue
@@ -1187,9 +1249,9 @@ def log10fuztest(pc,pt,cr,cwig,twig=None,rd=None):
     #ftest=r('''function(x,y){return(var.test(x,y)$p.value)}''')
     pf=r('''function(s,df1,df2){return(pf(s, df1, df2,log.p = TRUE)/log(10))}''')
     step=cwig.step
-    bv,bc=0,rd*2/step
+    bv,bc=0,div(rd*2,step)
     for d in range(-rd,rd+step,step):bv+=d*d
-    bvc=bv/bc
+    bvc=div(bv,bc)
         
     if twig==None:
         if pc>=(cwig.data[cr].size-1)*rd:return [0,sqrt(bvc)]
@@ -1197,7 +1259,7 @@ def log10fuztest(pc,pt,cr,cwig,twig=None,rd=None):
         v,c=var(p=pc,cr=cr,wig=cwig,step=step,rd=rd,bv=bv,bc=bc)
         if v>=bvc:return [0,sqrt(v)]
         else:
-            p=float(str(pf(v/bvc,c,bc)).split()[-1])
+            p=float(str(pf(div(v,bvc),c,bc)).split()[-1])
             return[p,sqrt(v)]
     else:
         if cr not in twig.data:return(fuztest(pc=pc,pt=pt,cr=cr,cwig=cwig,twig=None,rd=rd))
@@ -1210,23 +1272,23 @@ def log10fuztest(pc,pt,cr,cwig,twig=None,rd=None):
         if pt<rd: return [0,sqrt(bvc),sqrt(bvc)]
         vc,cc,=var(p=pc,cr=cr,wig=cwig,step=step,rd=rd,bv=bv,bc=bc)
         vt,ct=var(p=pt,cr=cr,wig=twig,step=step,rd=rd,bv=bv,bc=bc)
-        if vc<vt:p=float(str(pf(vc/vt,cc,ct)).split()[-1])
-        else:p=float(str(pf(vt/vc,ct,cc)).split()[-1])
+        if vc<vt:p=float(str(pf(div(vc,vt),cc,ct)).split()[-1])
+        else:p=float(str(pf(div(vt,vc),ct,cc)).split()[-1])
         return[p,sqrt(vc),sqrt(vt)]
 
 def var(p,cr,wig,step,rd,bv,bc):
     start,end=0-rd,rd+step
-    tp1,v1,c1=p/step,bv,bc
+    tp1,v1,c1=div(p,step),bv,bc
     mi=0#wig.data[cr][(tp1+start/step):(tp1+end/step)].min()
     for d in range(start,end,step):
         vd=d*d
         try:
-            v1+=vd*(wig.data[cr][tp1+d/step]-mi)
-            c1+=wig.data[cr][tp1+d/step]-mi
+            v1+=vd*(wig.data[cr][tp1+div(d,step)]-mi)
+            c1+=wig.data[cr][tp1+div(d,step)]-mi
         except:
             print(p,d,wig.data[cr].size)
             #return [v1/c1,c1]
-    return [v1/c1,c1]
+    return [div(v1,c1),c1]
   
 def occFDR(dwig,simu=1000000,regions=None):
     gs=0
@@ -1247,8 +1309,8 @@ def occFDR(dwig,simu=1000000,regions=None):
     id=0
     for cr in regions:
         for start in regions[cr]:
-            count=simu*(regions[cr][start]-start)/gs
-            rlth=(regions[cr][start]-start)/2
+            count=div(simu*(regions[cr][start]-start),gs)
+            rlth=div((regions[cr][start]-start),2)
             rstart,rend=start-rlth,regions[cr][start]+rlth
             if rstart<dwig.step:rstart=dwig.step
             if rend>dwig.data[cr].size*dwig.step-dwig.step:rend=dwig.data[cr].size*dwig.step-dwig.step
@@ -1256,7 +1318,7 @@ def occFDR(dwig,simu=1000000,regions=None):
             i=0
             while i<count:
                 p=randint(rstart,rend)
-                try: vec[id]=0-abs(dwig.data[cr][p/dwig.step])
+                try: vec[id]=0-abs(dwig.data[cr][div(p,dwig.step)])
                 except: print('wrong',id,vec.size,p,dwig.data[cr].size)
                 id+=1
                 i+=1
@@ -1272,7 +1334,7 @@ def findRank(vec,v):
     start,end=0,terminal+1
     find=True
     while find:
-        p=(start+end)//2
+        p=div((start+end),2)
         if p>=terminal:return terminal
         if p<=0: return 0
         if vec[p-1]>=v and vec[p]<=v:
@@ -1351,10 +1413,10 @@ def refPositions(positionFiles,distance=100):
                             #mergeto[cr][ps[i+1]]=ps[i]
                             ps[i+1]=ps[i]
                         elif vs[i]==vs[i+1]:
-                            pos=(ps[i]+ps[i+1])/2
+                            pos=div((ps[i]+ps[i+1]),2)
                             ps[i+1]=pos
                             #mergeto[cr][ps[i+1]]=pos
-                            vs[i+1]=(vs[i]+vs[i+1])/2#wg.data[cr][pos/wg.step] ###### added by Kaifu Chen Jul 10,2012 ######
+                            vs[i+1]=div((vs[i]+vs[i+1]),2)#wg.data[cr][pos/wg.step] ###### added by Kaifu Chen Jul 10,2012 ######
                         #else:mergeto[cr][ps[i]]=ps[i+1]
                 i+=1
             if (ps[-1]-ps[-2])>=distance:
@@ -1364,7 +1426,7 @@ def refPositions(positionFiles,distance=100):
                 if vs[-2]<vs[-1]:
                     nps[ni],nvs[ni]=ps[-2],vs[-2]
                 elif vs[-2]==vs[-1]:
-                    nps[ni],nvs[ni]=(ps[-2]+ps[-1])/2,(vs[-2]+vs[-1])/2#wg.data[cr][((ps[-2]+ps[-1])/2)/wg.step] ###### added by Kaifu Chen Jul 10,2012 ######
+                    nps[ni],nvs[ni]=div((ps[-2]+ps[-1]),2),div((vs[-2]+vs[-1]),2)#wg.data[cr][((ps[-2]+ps[-1])/2)/wg.step] ###### added by Kaifu Chen Jul 10,2012 ######
                 else:nps[ni],nvs[ni]=ps[-1],vs[-1]
                 ni+=1
                 merge+=1
@@ -1394,19 +1456,19 @@ def positionAdjust(dic,infile,outfile,wg,distance=100,fcut=None,hdiff=0.1):
     if outfile!=None:fo=open(outfile,'w')
     if outfile!=None:fo.write(lines[0])
     tdic={}
-    td,btd,step=distance/wg.step,distance/wg.step+1,wg.step
+    td,btd,step=div(distance,wg.step),div(distance,wg.step)+1,wg.step
     for line in lines[1:]:
         col=line.split()
         cr,pos,fuz=col[0],int(col[3]),float(col[5])
         if cr not in tdic:tdic[cr]={}
         if fuz<=fcut:tdic[cr][pos]=line
         else:
-            tp=pos/step
+            tp=div(pos,step)
             h = max(wg.data[cr][int(tp)],1)
             mi1 =wg.data[cr][int(max(tp-td,0)):int(tp)].min()
             mi2 = wg.data[cr][int(tp):int(min(tp+btd,wg.data[cr].size))].min()
             mi=max(mi1,mi2)
-            if (h-mi)/h>=hdiff and (h-mi)/h>=hdiff*1.5:tdic[cr][pos]=line#retuire occupancy to be hdiff fold lower at one linker relative to position center, and 1.5*hdiff lower at the other linker.
+            if div((h-mi),h)>=hdiff and div((h-mi),h)>=hdiff*1.5:tdic[cr][pos]=line#retuire occupancy to be hdiff fold lower at one linker relative to position center, and 1.5*hdiff lower at the other linker.
             
         '''
         if mergeto[cr].has_key(pos):
@@ -1493,17 +1555,17 @@ def scn(tpath,name='result',pdis=3000,step=1,mapq=30,clipSize=3,inter=True,intra
     sampling_total=uwigs.samplingTotal(exclude_low_percent=exclude_low_percent,exclude_high_percent=exclude_high_percent,bnum=bnum)
     tsum=0
     for groupname in groups:tsum+=sampling_total[groupname]
-    taverage=tsum*1.0/len(list(sampling_total.keys()))
+    taverage=div(tsum*1.0,len(list(sampling_total.keys())))
     for groupname in groups:
         tsum=uwigs.data[groupname].sum()
-        uwigs.data[groupname].foldChange(taverage/sampling_total[groupname])
+        uwigs.data[groupname].foldChange(div(taverage,sampling_total[groupname]))
         print('\nnormalize',groupname,'wiggle data of all all reads from',tsum,'to',uwigs.data[groupname].sum())
         if saveWig:uwigs.data[groupname].save(os.path.join(name,groupname)+'.all.nor.wig')
     
     for groupname in groups:
         print('\ncalling for',groupname,'...')
         tsum=groups[groupname].sum()
-        groups[groupname].foldChange(taverage/sampling_total[groupname])
+        groups[groupname].foldChange(div(taverage,sampling_total[groupname]))
         print('normalize from',tsum,'to',groups[groupname].sum())
         if saveWig:groups[groupname].save(os.path.join(name,groupname)+'.trans.nor.wig')
         #The value of groups[groupname] will be setted as the peaks data.
@@ -1539,10 +1601,10 @@ def scn(tpath,name='result',pdis=3000,step=1,mapq=30,clipSize=3,inter=True,intra
     print('\nall job done, cheers!\n\n')
     
 def scnCompare(tn1,tn2,sf1,sf2,lf1,lf2,lf,pvalue=1e-3,bindic={},width=0,distance=250,pheight=1,height=5,zscore=3,linkfold=0,linkLogP=0,binSize=1000,wsize=500,wstep=0):
-    pvalue=log(pvalue)/log(10)
-    tn=(tn1+tn2)/2.0
+    pvalue=div(log(pvalue),log(10))
+    tn=div((tn1+tn2),2.0)
     print('normalize reads count from',tn1,'and',tn2,'to',tn)
-    nf1,nf2=tn/tn1,tn/tn2
+    nf1,nf2=div(tn,tn1), div(tn,tn2)
     f1,f2,f=open(lf1),open(lf2),open(lf,'w'),
     t1=f1.readline().split()
     t2=f2.readline().split()
@@ -1562,7 +1624,7 @@ def scnCompare(tn1,tn2,sf1,sf2,lf1,lf2,lf,pvalue=1e-3,bindic={},width=0,distance
         pv=log10PropTest(list=[o1,tn1,o2,tn2])
         no1,no2=int(o1*nf1+0.5),int(o2*nf2+0.5)
         #try:
-        logFC=log(max(1,no1)*1.0/max(1,no2))/log(2)
+        logFC=div(log(div(max(1,no1)*1.0,max(1,no2))),log(2))
         if pv<pvalue:f.write('\t'.join(col1[:5]+col1[6:11]+[str(o1),str(o2),str(e1),str(e2),str(p1),str(p2),str(no1),str(no2),str(logFC),str(pv)])+'\n')
         #except:print no1,no2
 

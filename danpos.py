@@ -3,7 +3,7 @@
 
 import os,sys
 from time import time
-from functions import danpos
+from functions import danpos, div
 from math import log10
 from copy import deepcopy
 from wig import Wig
@@ -28,9 +28,8 @@ class Unbuffered(object):
 
 sys.stdout = Unbuffered(sys.stdout)
 
-
 def printHelp():
-    print('\ndanpos version 2.2.2')
+    print('\ndanpos version 3.0.0')
     print('For help information for each function, try:\npython danpos.py <function> -h')
     print('\nFunctions:')
     print('\tdpos:\n\t\tanalyze each protein-binding position (~100\n\t\tto ~200bp wide) across the whole genome,\n\t\te.g. nucleosome positions.')
@@ -279,7 +278,7 @@ def runDANPOS(command=''):
         print("\nPlease don't define both -H (--exclude_high_percent) and -N (--nor_region_file) in the command line\n")
         return
     
-    print("\ndanpos 2.2.2  version\n")
+    print("\ndanpos 3.0.0  version\n")
     print('command:\npython'," ".join(sys.argv)) # print the command line, this let the user to keep a log and remember what parameters they specified
     print('\n',args) # print all parameter values, this provide a eacy way for the user to double check the parameter values used by DANPOS
     
@@ -668,7 +667,7 @@ def wigProfileToBed(args,wgs,pos_neg='', outname='',outmode='w'):
                 lcount=len(glines)
                 for j in range(lcount):
                     col=glines[j].split()
-                    glines[j]='\t'.join([str(j),col[0],str((int(col[1])+int(col[2]))/2),'+'])
+                    glines[j]='\t'.join([str(j),col[0],str(div((int(col[1])+int(col[2])),2)),'+'])
                     #print glines[j]
                 if i==0:outmode='w'
                 else:outmode='a'

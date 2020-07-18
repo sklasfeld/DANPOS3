@@ -9,6 +9,7 @@ from math import log
 import gzip
 import sys
 import numpy as np
+import functions
 
 # function to check if samtools flag is true in 
 # second column of sam file
@@ -86,8 +87,8 @@ class reads:
             an dictionary with shift distance as key and correlation coefficient  correspondint to the distance
         '''
         step=self.step
-        minsize/=step
-        maxsize=maxsize/step+1
+        minsize= functions.div(minsize, step)
+        maxsize=functions.functions.div(maxsize,step)+1
         print('calculating ...')
         dic={}
         for i in range(int(minsize),int(maxsize)):
@@ -96,9 +97,9 @@ class reads:
             for chr in self.data:
                 sz=self.data[chr]['+'].size-maxsize
                 c=self.data[chr]['+'][:sz]*self.data[chr]['-'][i:(sz+i)]
-                dic[i]+=sz*(c.mean()-self.data[chr]['+'][:sz].mean()*self.data[chr]['-'][i:(sz+i)].mean())/(self.data[chr]['+'][:sz].std()*self.data[chr]['-'][i:(sz+i)].std())
+                dic[i]+=sz*functions.functions.div((c.mean()-self.data[chr]['+'][:sz].mean()*self.data[chr]['-'][i:(sz+i)].mean()),(self.data[chr]['+'][:sz].std()*self.data[chr]['-'][i:(sz+i)].std()))
                 szsum+=sz
-            dic[i]/=(szsum*1.0)
+            dic[i]=functions.functions.div(dic[i],(szsum*1.0))
         ks=list(dic.keys())
         ks.sort()
         fo=open(ofile,'w')
@@ -139,15 +140,15 @@ class reads:
         '''
         cut=1e-10
         step=self.step
-        minsize/=step
-        maxsize=maxsize/step+1
+        minsize=functions.functions.div(minsize,step)
+        maxsize=functions.functions.div(maxsize,step)+1
         
         avg=self.mean()*self.step ##### '*self.step' is added by Kaifu on Aug 1st, 2012 #####
         ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE))}''')
 
-        lgpcut=0-log(cut)/log(10)
+        lgpcut=0-functions.functions.div(log(cut),log(10))
         cut=int(avg+0.5)
-        while(0-(float(str(ppois(cut,avg.item())).split()[-1])/log(10))<lgpcut):cut+=1
+        while(0-(functions.functions.div(float(str(ppois(cut,avg.item())).split()[-1]),log(10)))<lgpcut):cut+=1
         if cut<1:cut=1
         
         print('calculating fragment size ...')
@@ -160,7 +161,7 @@ class reads:
             
             for stra in list(tchr.keys()): #remove clonal reads, only necessary in danpos 2.2.0 and later versions
                 tchr[stra]-=cut#all positive values are count of clonal reads
-                tchr[stra]=((tchr[stra]**2)**0.5+tchr[stra])/2#remove all neative values
+                tchr[stra]=functions.functions.div(((tchr[stra]**2)**0.5+tchr[stra]),2)#remove all neative values
                 tchr[stra]=self.data[chr][stra]-tchr[stra]
             
             for i in range(int(minsize),int(maxsize)):
@@ -172,7 +173,7 @@ class reads:
         print('sizes distribution:')
         for i in range(int(minsize),int(maxsize)):
             oline=""
-            for j in range(0,int(100*dic[i]/m),):oline+='-'
+            for j in range(0,functions.functions.div(int(100*dic[i],m)),):oline+='-'
             print(oline,str(i*step)+'bp',str(dic[i]))
             if dic[i]>=m*0.95:p.append(i)
         warning=False
@@ -185,7 +186,7 @@ class reads:
         for j in p:
             upv+=j*dic[j]
             dpv+=dic[j]
-        finalsize=int(upv/dpv+0.5)
+        finalsize=int(functions.functions.div(upv,dpv)+0.5)
         if (finalsize-minsize)<3 :print('warning: the calculated fragment size seems too close the the bottom limit, we suggest to change bottom limit and try again!')
         if (maxsize-finalsize)<3 :print('warning: the calculated fragment size seems too close the the up limit, we to change up limit and try again!')
         print('potential size:', end=' ')
@@ -238,8 +239,8 @@ class reads:
             '''
 
             if num%1000000==0: print(num,'reads parsed')
-            if stra=='+':mid=start/step
-            elif stra=='-':mid=end/step
+            if stra=='+':mid=functions.functions.div(start,step)
+            elif stra=='-':mid=functions.div(end,step)
             if chr not in self.data:
                 self.data[chr]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
                 sizes[chr]=0
@@ -299,9 +300,9 @@ class reads:
                 continue
             if end1[3][:-1]==end2[3][:-1]:
                 if end1[5]=='+' and end2[5]=='-':
-                    chr,mid,fragsize=end1[0],(end1[1]+end2[2])/(2*step),end2[2]-end1[1]
+                    chr,mid,fragsize=end1[0],functions.div((end1[1]+end2[2]),(2*step)),end2[2]-end1[1]
                 elif end1[5]=='-' and end2[5]=='+':
-                    chr,mid,fragsize=end1[0],(end1[2]+end2[1])/(2*step),end2[1]-end1[2]
+                    chr,mid,fragsize=end1[0],functions.div((end1[2]+end2[1]),(2*step)),end2[1]-end1[2]
                 else:
                     print('pair error --- reads from same strand:\n',end1,'\n',end2,'\n')
                     serr+=1
@@ -341,9 +342,9 @@ class reads:
             if fragsizes[lth]==maxv:maxlth.append(lth)
             tlth+=lth*fragsizes[lth]
             count+=fragsizes[lth]
-            dcount=int(np.ceil(100*fragsizes[lth]/maxv))
+            dcount=np.ceil(functions.div(100*fragsizes[lth],maxv))
             if dcount>4: print('-'*dcount,lth,fragsizes[lth])
-        print('average fragment size:',tlth*1.0/count)
+        print('average fragment size:',functions.div(tlth*1.0,count))
         print('most enriched fragment size:',maxlth)
         print(serr,'pairs failed due to locations on same strands')
         print(nerr,'reads have no mate reads')
@@ -394,8 +395,8 @@ class reads:
                     return
             '''
             if num%1000000==0: print(num,'reads parsed')
-            if stra=='+':mid=start/step
-            elif stra=='-':mid=end/step
+            if stra=='+':mid=functions.div(start,step)
+            elif stra=='-':mid=functions.div(end,step)
             if chr not in self.data:
                 self.data[chr]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
                 sizes[chr]=0
@@ -453,9 +454,9 @@ class reads:
                 continue
             if end1[3][:-1]==end2[3][:-1]:
                 if end1[5]=='+' and end2[5]=='-':
-                    chr,mid,fragsize=end1[0],(end1[1]+end2[2])/(2*step),end2[2]-end1[1]
+                    chr,mid,fragsize=end1[0],functions.div((end1[1]+end2[2]),(2*step)),end2[2]-end1[1]
                 elif end1[5]=='-' and end2[5]=='+':
-                    chr,mid,fragsize=end1[0],(end1[2]+end2[1])/(2*step),end2[1]-end1[2]
+                    chr,mid,fragsize=end1[0],functions.div((end1[2]+end2[1]),(2*step)),end2[1]-end1[2]
                 else:
                     #print 'pair error --- reads from same strand:\n',end1,'\n',end2,'\n'
                     serr+=1
@@ -495,9 +496,9 @@ class reads:
             if fragsizes[lth]==maxv:maxlth.append(lth)
             tlth+=lth*fragsizes[lth]
             count+=fragsizes[lth]
-            dcount=int(np.ceil(100*fragsizes[lth]/maxv))
+            dcount=np.ceil(functions.div(100*fragsizes[lth],maxv))
             if dcount>4: print('-'*dcount,lth,fragsizes[lth])
-        print('average fragment size:',tlth*1.0/count)
+        print('average fragment size:',functions.div(tlth*1.0,count))
         print('most enriched fragment size:',maxlth)
         print(serr,'pairs failed due to locations on same strands')
         print(nerr,'reads have no mate reads')
@@ -533,8 +534,8 @@ class reads:
                 continue
             num+=1
             if num%1000000==0: print(num,'reads parsed')
-            if stra=='+':mid=start/step
-            elif stra=='-':mid=end/step
+            if stra=='+':mid=functions.div(start,step)
+            elif stra=='-':mid=functions.div(end,step)
             if chr not in self.data:
                 self.data[chr]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
                 sizes[chr]=0
@@ -574,7 +575,7 @@ class reads:
                 if not 'P' in samflag(col[1]):continue
                 col[3],col[7],col[9]=int(col[3]),int(col[7]),len(col[9])
                 name,chr,stra,score=col[0],col[2],'+','1'
-                mid=int(np.floor((col[3]+col[7]+col[9])/(2*step)))
+                mid=np.floor(functions.div((col[3]+col[7]+col[9]),(2*step)))
                 if 'r' in samflag(col[1]):stra='-'
                 if col[7]>col[3]:fragsize=col[7]-col[3]+col[9]
                 else:fragsize=col[3]-col[7]+col[9]
@@ -608,9 +609,9 @@ class reads:
             if fragsizes[lth]==maxv:maxlth.append(lth)
             tlth+=lth*fragsizes[lth]
             count+=fragsizes[lth]
-            dcount=int(np.ceil(100*fragsizes[lth]/maxv))
+            dcount=np.ceil(functions.div(100*fragsizes[lth],maxv))
             if dcount>4: print('-'*dcount,lth,fragsizes[lth])
-        print('average fragment size:',tlth*1.0/count)
+        print('average fragment size:',functions.div(tlth*1.0,count))
         print('most enriched fragment size:',maxlth)
 
     def loadBam(self,file="",step=10,cut=1e-10):
@@ -644,8 +645,8 @@ class reads:
                 continue
             num+=1
             if num%1000000==0: print(num,'reads parsed')
-            if stra=='+':mid=int(start/step)
-            elif stra=='-':mid=int(end/step)
+            if stra=='+':mid=functions.div(start,step)
+            elif stra=='-':mid=functions.div(end,step)
             if chr not in self.data:
                 self.data[chr]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
                 sizes[chr]=0
@@ -686,7 +687,7 @@ class reads:
                 if not 'P' in samflag(col[1]):continue
                 col[3],col[7],col[9]=int(col[3]),int(col[7]),len(col[9])
                 name,chr,stra,score=col[0],col[2],'+','1'
-                mid=int(np.floor((col[3]+col[7]+col[9])/(2*step)))
+                mid=np.floor(functions.div((col[3]+col[7]+col[9]),(2*step)))
                 if 'r' in samflag(col[1]):stra='-'
                 if col[7]>col[3]:fragsize=col[7]-col[3]+col[9]
                 else:fragsize=col[3]-col[7]+col[9]
@@ -721,9 +722,9 @@ class reads:
             if fragsizes[lth]==maxv:maxlth.append(lth)
             tlth+=lth*fragsizes[lth]
             count+=fragsizes[lth]
-            dcount=int(np.ceil(100*fragsizes[lth]/maxv))
+            dcount=np.ceil(functions.div(100*fragsizes[lth],maxv))
             if dcount>4: print('-'*dcount,lth,fragsizes[lth])
-        print('average fragment size:',tlth*1.0/count)
+        print('average fragment size:',functions.div(tlth*1.0,count))
         print('most enriched fragment size:',maxlth)
 
     def mean(self):
@@ -737,7 +738,7 @@ class reads:
         Value:
             None
         '''
-        return self.sum()*1.0/self.size()
+        return functions.div(self.sum()*1.0,self.size())
     def rvClonal(self,cut=1e-10):
         '''
         Description:
@@ -754,12 +755,12 @@ class reads:
         cut=float(cut)
         if cut<=0:return
         print('removing clonal reads ...')
-        avg=self.mean()/self.step ##### '*self.step' is added by Kaifu on Aug 1st, 2012 ##### and is further changed to be /self.step on May29, 2014
+        avg=functions.div(self.mean(),self.step) ##### '*self.step' is added by Kaifu on Aug 1st, 2012 ##### and is further changed to be /self.step on May29, 2014
         if  cut>0 and cut<1:
             ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE))}''')
-            lgpcut=0-log(cut)/log(10)
+            lgpcut=0-functions.div(log(cut),log(10))
             cut=avg+0.5
-            while(0-(float(str(ppois(cut,float(avg))).split()[-1])/log(10))<lgpcut):cut+=1
+            while(0-(functions.div(float(str(ppois(cut,float(avg))).split()[-1]),log(10)))<lgpcut):cut+=1
             if cut<1:cut=1
         print('whole genome average reads density is',avg,'use cutoff:',cut)
         cut*=self.step ##### added by Kaifu on May29, 2014
@@ -773,11 +774,11 @@ class reads:
             for stra in list(self.data[chr].keys()):
                 tchrv=deepcopy(self.data[chr][stra])
                 tchrv-=cut#all positive values are count of clonal reads
-                tchrv=((tchrv**2)**0.5+tchrv)/2#remove all neative values
+                tchrv=functions.div(((tchrv**2)**0.5+tchrv),2)#remove all neative values
                 self.data[chr][stra]-=tchrv
         after=self.sum()
         print('after removing:',after,'reads')
-        print((before-after)*100/before,'percent removed.')
+        print(functions.div((before-after)*100,before),'percent removed.')
         print('time cost:',time()-ss)
 
     def size(self):
@@ -810,7 +811,7 @@ class reads:
         sizes={}
         for line in open(gfile):
             col=line.split()
-            sizes[col[0]]=int(col[1])/self.step
+            sizes[col[0]]=functions.div(int(col[1]),self.step)
         for chr in self.data:
             if chr not in sizes:self.data.pop(chr)
             for str in self.data[chr]:
@@ -851,7 +852,7 @@ class reads:
         if extend<=0:extend=fs
         print('extend to',extend)
         old_extend=extend
-        fragsize,extend=round(fs/(2*step)),round(extend/(2*step))
+        fragsize,extend=functions.div(fs,(2*step)),functions.div(extend,(2*step))
         wg=Wig(step=step)
         print('generating wig ...')
         for chr in self.data:
@@ -865,7 +866,7 @@ class reads:
             for i in range(fragsize):self.data[chr]['+'][i]=0
             self.data[chr]['+'][0:(lth-fragsize)]+=self.data[chr]['-'][fragsize:lth]
             for p in range(-extend,extend+1):wg.data[chr][extend:(lth-extend)]+=self.data[chr]['+'][(extend+p):(lth-extend+p)]
-        wg.foldChange(old_extend*1.0/wg.step) ##### added by Kaifu on May29, 2014
+        wg.foldChange(functions.div(old_extend*1.0,wg.step)) ##### added by Kaifu on May29, 2014
         return wg
     def foldSampling(self,fold=1.0):
         '''

@@ -3,6 +3,16 @@ from time import time
 from copy import deepcopy
 import numpy
 
+# since this code was originally written in
+# python2 which has integer division
+# we much do division differently if both
+# dividing numbers are ints
+def div(a,b):
+    if isinstance(a,int) and isinstance(b,int):
+        return(a//b)
+    else:
+        return(a/b)
+
 class Summits:
     def __init__(self):
         self.data = {} #self.data[chr]['feature']=numpy_array, 'feature' can be 'p':summit position, 'v': summit occupancy value, 's': positioning score, or 'ppos':positioning p value
@@ -28,7 +38,7 @@ class Summits:
             lth=ps.size
             i=0
             while(i<lth):
-                tp=ps[i]/wig.step
+                tp=div(ps[i],wig.step)
                 if cr in wig.data:
                     if tp>wig.data[cr].size:wig.data[cr].resize(tp+1,refcheck=0)
                     smt.data[cr]['v'][i]=wig.data[cr][int(tp)]
@@ -127,10 +137,10 @@ class Summits:
                                 vs[i+1]=vs[i]
                                 ps[i+1]=ps[i]
                             elif vs[i]==vs[i+1]:
-                                pos=(ps[i]+ps[i+1])/2
+                                pos=div((ps[i]+ps[i+1]),2)
                                 ps[i+1]=pos
-                                print(round(pos/wg.step))
-                                vs[i+1]=wg.data[cr][int(round(pos/wg.step))] ###### added by Kaifu Chen Jul 10,2012 ######
+                                print(div(pos,wg.step))
+                                vs[i+1]=wg.data[cr][int(div(pos,wg.step))] ###### added by Kaifu Chen Jul 10,2012 ######
                     i+=1
                 if (ps[-1]-ps[-2])>=distance:
                     nps[ni],nps[ni+1],nvs[ni],nvs[ni+1]=ps[-2],ps[-1],vs[-2],vs[-1]
@@ -140,8 +150,8 @@ class Summits:
                         nps[ni],nvs[ni]=ps[-2],vs[-2]
                     elif vs[-2]==vs[-1]:
                         ###### added by Kaifu Chen Jul 10,2012 ######
-                        nps[ni]=(ps[-2]+ps[-1])/2
-                        nvs[ni]=wg.data[cr][int(((ps[-2]+ps[-1])/2)/wg.step)] 
+                        nps[ni]=div((ps[-2]+ps[-1]),2)
+                        nvs[ni]=wg.data[cr][div(div((ps[-2]+ps[-1]),2),wg.step)] 
                     else:nps[ni],nvs[ni]=ps[-1],vs[-1]
                     ni+=1
                     merge+=1
@@ -181,7 +191,7 @@ class Summits:
             while(i<lth):
                 gs=ps[i+1]-ps[i]
                 if gs>midis and gs<madis:
-                    p=int((ps[i+1]+ps[i])*0.5/step)
+                    p=int(div((ps[i+1]+ps[i])*0.5,step))
                     #print gs, wg.data[cr][p],wg.data[cr][ps[i]/step],wg.data[cr][ps[i+1]/step]
                     if wg.data[cr][p]>=height:
                         id.append(i+1)

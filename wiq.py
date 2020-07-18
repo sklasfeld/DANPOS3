@@ -3,6 +3,8 @@ import os,sys,re,argparse
 from wig import Wig
 from glob import glob
 from time import time
+from functions import div
+
 def rawsort(ifile,sort_ofile,gfile,format,step=10,suppress=False,buffer=None):
     tm=time()
     if format=='wig':
@@ -43,7 +45,7 @@ def refquantile(paths,ofile,gfile):
         for file in files[1:]:
             add_line=fi[file].readline()
             v+=float(add_line.split()[0])
-        fo.write(str(v/nfile)+'\t-\t-\t-\n')
+        fo.write(str(div(v,nfile))+'\t-\t-\t-\n')
     fo.close()
     print('time cost:',time()-tm)
     
@@ -58,7 +60,7 @@ def changevalue(ifile,ref,ofile,gfile,step=10,suppress=False,buffer=None):
         col=line.split()
         rcol=fr.readline().split()
         if len(rcol)==0:rcol=[0.0]
-        cr,pos,vl=col[2],int(col[3])/step,float(rcol[0])
+        cr,pos,vl=col[2],div(int(col[3]),step),float(rcol[0])
         wg.data[cr][pos]=vl
     n=0
     for line in fr:n+=1
