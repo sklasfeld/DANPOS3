@@ -14,6 +14,7 @@ import functions
 # function to check if samtools flag is true in 
 # second column of sam file
 def samflag(flag):
+    flag=int(flag)
     flag_list={}
     # 0. read paired
     flag_list[0]="p"
@@ -39,11 +40,15 @@ def samflag(flag):
     flag_list[10]="d"
     # 11. supplementary alignment
     flag_list[11]="S"
+    binary_str=str(bin(flag))[2:]
+    print(flag)
+    print(binary_str)
     bitstring=""
-    for bit in range(0,12):
-        bit_num=int("{0:b}".format(int(flag))) & (1 << bit)
-        if (bit_num == 2**bit):
+    for bit in range(0,len(binary_str)):
+        print(binary_str[bit])
+        if binary_str[bit] == "1":
             bitstring+=flag_list[bit]
+    sys.exit()
     return(bitstring)
 
 
@@ -88,7 +93,7 @@ class reads:
         '''
         step=self.step
         minsize= functions.div(minsize, step)
-        maxsize=functions.functions.div(maxsize,step)+1
+        maxsize=functions.div(maxsize,step)+1
         print('calculating ...')
         dic={}
         for i in range(int(minsize),int(maxsize)):
@@ -97,9 +102,9 @@ class reads:
             for chr in self.data:
                 sz=self.data[chr]['+'].size-maxsize
                 c=self.data[chr]['+'][:sz]*self.data[chr]['-'][i:(sz+i)]
-                dic[i]+=sz*functions.functions.div((c.mean()-self.data[chr]['+'][:sz].mean()*self.data[chr]['-'][i:(sz+i)].mean()),(self.data[chr]['+'][:sz].std()*self.data[chr]['-'][i:(sz+i)].std()))
+                dic[i]+=sz*functions.div((c.mean()-self.data[chr]['+'][:sz].mean()*self.data[chr]['-'][i:(sz+i)].mean()),(self.data[chr]['+'][:sz].std()*self.data[chr]['-'][i:(sz+i)].std()))
                 szsum+=sz
-            dic[i]=functions.functions.div(dic[i],(szsum*1.0))
+            dic[i]=functions.div(dic[i],(szsum*1.0))
         ks=list(dic.keys())
         ks.sort()
         fo=open(ofile,'w')
@@ -140,15 +145,15 @@ class reads:
         '''
         cut=1e-10
         step=self.step
-        minsize=functions.functions.div(minsize,step)
-        maxsize=functions.functions.div(maxsize,step)+1
+        minsize=functions.div(minsize,step)
+        maxsize=functions.div(maxsize,step)+1
         
         avg=self.mean()*self.step ##### '*self.step' is added by Kaifu on Aug 1st, 2012 #####
         ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE))}''')
 
-        lgpcut=0-functions.functions.div(log(cut),log(10))
+        lgpcut=0-functions.div(log(cut),log(10))
         cut=int(avg+0.5)
-        while(0-(functions.functions.div(float(str(ppois(cut,avg.item())).split()[-1]),log(10)))<lgpcut):cut+=1
+        while(0-(functions.div(float(str(ppois(cut,avg.item())).split()[-1]),log(10)))<lgpcut):cut+=1
         if cut<1:cut=1
         
         print('calculating fragment size ...')
@@ -161,7 +166,7 @@ class reads:
             
             for stra in list(tchr.keys()): #remove clonal reads, only necessary in danpos 2.2.0 and later versions
                 tchr[stra]-=cut#all positive values are count of clonal reads
-                tchr[stra]=functions.functions.div(((tchr[stra]**2)**0.5+tchr[stra]),2)#remove all neative values
+                tchr[stra]=functions.div(((tchr[stra]**2)**0.5+tchr[stra]),2)#remove all neative values
                 tchr[stra]=self.data[chr][stra]-tchr[stra]
             
             for i in range(int(minsize),int(maxsize)):
@@ -173,7 +178,7 @@ class reads:
         print('sizes distribution:')
         for i in range(int(minsize),int(maxsize)):
             oline=""
-            for j in range(0,functions.functions.div(int(100*dic[i],m)),):oline+='-'
+            for j in range(0,int(functions.div(100*dic[i],m)),):oline+='-'
             print(oline,str(i*step)+'bp',str(dic[i]))
             if dic[i]>=m*0.95:p.append(i)
         warning=False
@@ -186,7 +191,7 @@ class reads:
         for j in p:
             upv+=j*dic[j]
             dpv+=dic[j]
-        finalsize=int(functions.functions.div(upv,dpv)+0.5)
+        finalsize=int(functions.div(upv,dpv)+0.5)
         if (finalsize-minsize)<3 :print('warning: the calculated fragment size seems too close the the bottom limit, we suggest to change bottom limit and try again!')
         if (maxsize-finalsize)<3 :print('warning: the calculated fragment size seems too close the the up limit, we to change up limit and try again!')
         print('potential size:', end=' ')
@@ -239,7 +244,7 @@ class reads:
             '''
 
             if num%1000000==0: print(num,'reads parsed')
-            if stra=='+':mid=functions.functions.div(start,step)
+            if stra=='+':mid=functions.div(start,step)
             elif stra=='-':mid=functions.div(end,step)
             if chr not in self.data:
                 self.data[chr]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
@@ -635,9 +640,12 @@ class reads:
         for line in infile:
             try:
                 col=line.split('\t')
-                #if float(col[4])<35:continue ################## require unique, added specifically for SCN, need to be deleted soon ##################
+                # skip unmapped reads
+                print(samflag(col[1]))
+                sys.exit()
                 if 'u' in samflag(col[1]):continue
                 name,chr,stra,start,rlen=col[0],col[2],'+',int(col[3]),len(col[9])
+                # set `stra` to "-" for reverse reads
                 if 'r' in samflag(col[1]):stra='-'
                 end,score=start+rlen,'1'
             except:
@@ -738,7 +746,9 @@ class reads:
         Value:
             None
         '''
+
         return functions.div(self.sum()*1.0,self.size())
+
     def rvClonal(self,cut=1e-10):
         '''
         Description:

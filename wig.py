@@ -37,8 +37,8 @@ class Wig:
         '''
         wig=self.data
         sum=0.0
-        for chr in wig:
-            for v in wig[chr]:sum+=abs(v)
+        for chrom in wig:
+            for v in wig[chrom]:sum+=abs(v)
         return sum
     def add(self,wig2):
         '''
@@ -55,29 +55,29 @@ class Wig:
             wig2=deepcopy(wig2)
             wig2.changeStep(self.step)
         chrs={}
-        for chr in self.data:chrs[chr]=1
-        for chr in wig2.data:chrs[chr]=1
+        for chrom in self.data:chrs[chrom]=1
+        for chrom in wig2.data:chrs[chrom]=1
         chrs=list(chrs.keys())
-        for chr in chrs:
-            if chr not in self.data:self.addChr(chr)
-            if chr not in wig2.data:wig2.addChr(chr)
-            lth1=self.data[chr].size
-            lth2=wig2.data[chr].size
-            if lth1>lth2:wig2.data[chr].resize(lth1,refcheck=0)
-            elif lth1<lth2:self.data[chr].resize(lth2,refcheck=0)
-            self.data[chr]+=wig2.data[chr]
+        for chrom in chrs:
+            if chrom not in self.data:self.addChr(chrom)
+            if chrom not in wig2.data:wig2.addChr(chrom)
+            lth1=self.data[chrom].size
+            lth2=wig2.data[chrom].size
+            if lth1>lth2:wig2.data[chrom].resize(lth1,refcheck=0)
+            elif lth1<lth2:self.data[chrom].resize(lth2,refcheck=0)
+            self.data[chrom]+=wig2.data[chrom]
         return True
-    def addChr(self,chr):
+    def addChr(self,chrom):
         '''
         Description:
             add a new chrosome to the existance Wig class instance
         
         Parameter:
-            chr: the name of the chrosome to be added
+            chrom: the name of the chrosome to be added
             
         Value: none
         '''
-        self.data[chr]=numpy.array([0.0])
+        self.data[chrom]=numpy.array([0.0])
     def ajust_size(self,gfile):
         step=self.step
         crs={}
@@ -91,18 +91,18 @@ class Wig:
         for cr in tcrs:
             if cr not in crs:self.data.pop(cr)
         
-    def getChr(self,chr):
+    def getChr(self,chrom):
         '''
         Description:
             retrieve a chrosome by name.
             
         Parameter:
-            chr: the name of the chrosome to be retrived.
+            chrom: the name of the chrosome to be retrived.
         
         Value:
             a list as an instance of the numpy.array.
         '''
-        return self.data[chr]
+        return self.data[chrom]
     def correlation(self,wg2,ofile,mind=0,maxd=50):
         '''
         Description:
@@ -121,23 +121,23 @@ class Wig:
         chrs2=wg2.getChrs()
         mind = functions.div(mind,self.step)
         maxd = functions.div(maxd,self.step)
-        for chr in chrs:
-            d[chr]={}
-            if chr in chrs2:
-                cs=max(self.chrSize(chr),wg2.chrSize(chr))
-                if self.chrSize(chr)!=cs:self.resizeChr(chr,cs)
-                if wg2.chrSize(chr)!=cs:wg2.resizeChr(chr,cs)
+        for chrom in chrs:
+            d[chrom]={}
+            if chrom in chrs2:
+                cs=max(self.chrSize(chrom),wg2.chrSize(chrom))
+                if self.chrSize(chrom)!=cs:self.resizeChr(chrom,cs)
+                if wg2.chrSize(chrom)!=cs:wg2.resizeChr(chrom,cs)
                 for td in range(int(mind),int(maxd+1)):
-                    v=r.cor(FloatVector(self.getChr(chr)[:(functions.div(cs,self.step)-td)]),FloatVector(wg2.getChr(chr)[td:functions.div(cs,self.step)]))
-                    d[chr][td]=float(str(v).split()[-1])
+                    v=r.cor(FloatVector(self.getChr(chrom)[:(functions.div(cs,self.step)-td)]),FloatVector(wg2.getChr(chrom)[td:functions.div(cs,self.step)]))
+                    d[chrom][td]=float(str(v).split()[-1])
         fo=open(ofile,'w')
         fo.write('Shift_disance\tcorrelation_coefficient\n')
         for td in range(round(mind),round(maxd+1)):
             v=0.0
             s=0
             gs=self.gsize()
-            for chr in d:
-                v+=self.chrSize(chr)*d[chr][td]
+            for chrom in d:
+                v+=self.chrSize(chrom)*d[chrom][td]
             fo.write(str(td*self.step)+'\t'+str(functions.div(v,gs))+'\n')
 
     def bgsub(self,wig2,lmd=1000):
@@ -158,14 +158,14 @@ class Wig:
         wig2=deepcopy(wig2)
         if self.step!=wig2.step:wig2.changeStep(self.step)
         chrs={}
-        for chr in self.data:chrs[chr]=1
-        for chr in wig2.data:chrs[chr]=1
+        for chrom in self.data:chrs[chrom]=1
+        for chrom in wig2.data:chrs[chrom]=1
         chrs=list(chrs.keys())
-        for chr in chrs:
-            lth1=len(self.data[chr])
-            lth2=len(wig2.data[chr])
-            if lth1>lth2:wig2.data[chr].resize(lth1,refcheck=0)
-            else:self.data[chr].resize(lth2,refcheck=0)
+        for chrom in chrs:
+            lth1=len(self.data[chrom])
+            lth2=len(wig2.data[chrom])
+            if lth1>lth2:wig2.data[chrom].resize(lth1,refcheck=0)
+            else:self.data[chrom].resize(lth2,refcheck=0)
         if lmd>0:wig2.smooth(lmd=lmd)
         wig2.foldChange(functions.div(self.sum(),wig2.sum()))
         sys.stdout.write('before subtracting: %f\n' % self.sum())
@@ -209,39 +209,39 @@ class Wig:
         if twidth<1:twidth=1
         pks={}
         if not suppress: sys.stdout.write('calling ...\n')
-        for chr in dic:
-            pks[chr]={}
-            lth=dic[chr].size#.chrSize(chr)/twstep-twidth
+        for chrom in dic:
+            pks[chrom]={}
+            lth=dic[chrom].size#.chrSize(chrom)/twstep-twidth
             if lth<=0:continue
-            if not suppress: sys.stdout.write(chr + ' ')
+            if not suppress: sys.stdout.write(chrom + ' ')
             start,pos=-1,0
             while pos <lth:
                 if start<0:
-                    if dic[chr][pos]>=height:start=pos
-                elif dic[chr][pos]<height:
-                    if pos-start>=twidth:pks[chr][start*step]=(pos)*step
+                    if dic[chrom][pos]>=height:start=pos
+                elif dic[chrom][pos]<height:
+                    if pos-start>=twidth:pks[chrom][start*step]=(pos)*step
                     start=-1
                 pos+=1
-            if not suppress: sys.stdout.write("%i\n" % len(pks[chr]))
+            if not suppress: sys.stdout.write("%i\n" % len(pks[chrom]))
         if distance>0: 
             if not suppress: sys.stdout.write('mering\n')
             crs=list(pks.keys())
             crs.sort()
-            for chr in crs :
-                ps=list(pks[chr].keys())
-                if not suppress: sys.stdout.write(chr + ' from ' + str(len(ps)) +' ')
+            for chrom in crs :
+                ps=list(pks[chrom].keys())
+                if not suppress: sys.stdout.write(chrom + ' from ' + str(len(ps)) +' ')
                 ps.sort()
                 lth=len(ps)-1
                 i=0
                 while i<lth:
                     #j=i+1
-                    #while ps[j]-pks[chr][ps[i]]<=distance:
-                    if ps[i+1]-pks[chr][ps[i]]<=distance:# or pks[chr][ps[i+1]]<=pks[chr][ps[i]]:
-                        if pks[chr][ps[i]]<pks[chr][ps[i+1]]:pks[chr][ps[i]]=pks[chr][ps[i+1]]
-                        pks[chr].pop(ps[i+1])
+                    #while ps[j]-pks[chrom][ps[i]]<=distance:
+                    if ps[i+1]-pks[chrom][ps[i]]<=distance:# or pks[chrom][ps[i+1]]<=pks[chrom][ps[i]]:
+                        if pks[chrom][ps[i]]<pks[chrom][ps[i+1]]:pks[chrom][ps[i]]=pks[chrom][ps[i+1]]
+                        pks[chrom].pop(ps[i+1])
                         ps[i+1]=ps[i]
                     i+=1
-                if not suppress: sys.stdout.write('to '+str(len(pks[chr])) + "\n")
+                if not suppress: sys.stdout.write('to '+str(len(pks[chrom])) + "\n")
         if ofile!=None:
             outf=open(ofile,mode)
             if title_line:
@@ -250,31 +250,31 @@ class Wig:
                     else:outf.write("chr\tstart\tend\tsummit_pos\tsummit_value\tstrand\ttotal_signal\twidth_above_cutoff\n")
             crs=list(pks.keys())
             crs.sort()
-            for chr in crs :
-                #out[chr]={}
-                ps=list(pks[chr].keys())
+            for chrom in crs :
+                #out[chrom]={}
+                ps=list(pks[chrom].keys())
                 ps.sort()
                 for p in ps:
                     width_above_cutoff=0
-                    s,e=functions.div(p,step),functions.div(pks[chr][p],step)
-                    v=max(dic[chr][s:e])
-                    auc=0#dic[chr][s:e].sum()*step
+                    s,e=functions.div(p,step),functions.div(pks[chrom][p],step)
+                    v=max(dic[chrom][s:e])
+                    auc=0#dic[chrom][s:e].sum()*step
                     if ((e-s)>=twidth):# and (v>=sheight):
                         smts=[]
                         for i in range(s,e):
-                            if dic[chr][i]==v:smts.append(str(i*step))
-                            if dic[chr][i]>=height:width_above_cutoff+=step
+                            if dic[chrom][i]==v:smts.append(str(i*step))
+                            if dic[chrom][i]>=height:width_above_cutoff+=step
                             if pos_only:
-                                if dic[chr][i]>0:auc+=dic[chr][i]
-                            else:auc+=dic[chr][i]
+                                if dic[chrom][i]>0:auc+=dic[chrom][i]
+                            else:auc+=dic[chrom][i]
                         auc=auc*step
                         smt=','.join(smts)
                         lth=functions.div(len(smts),2)
                         if calculate_P_value:
                             pvl=functions.div(float(str(ppois(v.item(),m.item())).split()[-1]),log(10))
-                            outf.write(chr+"\t"+str(p)+"\t"+str(pks[chr][p])+"\t"+smt+'\t'+str(v)+'\t+\t'+str(auc)+'\t'+str(width_above_cutoff)+'\t'+str(0-pvl)+"\n")
-                        else:outf.write(chr+"\t"+str(p)+"\t"+str(pks[chr][p])+"\t"+smt+'\t'+str(v)+'\t+\t'+str(auc)+'\t'+str(width_above_cutoff)+'\n')
-                    else:pks[chr].pop(p)
+                            outf.write(chrom+"\t"+str(p)+"\t"+str(pks[chrom][p])+"\t"+smt+'\t'+str(v)+'\t+\t'+str(auc)+'\t'+str(width_above_cutoff)+'\t'+str(0-pvl)+"\n")
+                        else:outf.write(chrom+"\t"+str(p)+"\t"+str(pks[chrom][p])+"\t"+smt+'\t'+str(v)+'\t+\t'+str(auc)+'\t'+str(width_above_cutoff)+'\n')
+                    else:pks[chrom].pop(p)
         return pks
         
     def fillRegions(self,regions={},file=None,pheight=1,height=0,width=0,calculate_P_value=1,pos_only=False,suppress=False):
@@ -296,18 +296,23 @@ class Wig:
         else:outf.write('chr\tstart\tend\tcenter\twidth_above_cutoff\ttotal_signal\theight\n')
         step=self.step
         dic=self.data
+
         total_width_above_cutoff=0
         #for line in lines[1:]:
         #    col=line.split()
-        for chr in regions:
-            starts=list(regions[chr].keys())
+        for chrom in regions:
+            starts=list(regions[chrom].keys())
             starts.sort()
             for start in starts:
-                if regions[chr][start]-start<width:continue
-                s,e=functions.div(start,step),functions.div(regions[chr][start],step+1)
-                if dic[chr].size<=e:dic[chr].resize(e+1,refcheck=0)
+                if regions[chrom][start]-start<width:continue
+                s,e=functions.div(start,step),functions.div(regions[chrom][start],step+1)
+                if dic[chrom].size<=e:dic[chrom].resize(e+1,refcheck=0)
                 width_above_cutoff=0
-                v=max(dic[chr][s:e])
+                print(dic[chrom][s:e])
+                print(chrom)
+                print(s)
+                print(e)
+                v=max(dic[chrom][s:e])
                 if pos_only:v=max(v,0)
                 auc=0
                 #substart=-1
@@ -316,27 +321,27 @@ class Wig:
                 while i<e:
                     '''
                     if substart<0:
-                        if dic[chr][i]>=height:substart=i
-                    elif dic[chr][i]<height:
+                        if dic[chrom][i]>=height:substart=i
+                    elif dic[chrom][i]<height:
                         subpeaks+=str(substart*step)+':'+str(i*step)+','
                         substart=-1
                     '''
-                    if dic[chr][i]>=height:width_above_cutoff+=step
+                    if dic[chrom][i]>=height:width_above_cutoff+=step
                     if pos_only:
-                        if dic[chr][i]>0:auc+=dic[chr][i]
-                    else:auc+=dic[chr][i]
+                        if dic[chrom][i]>0:auc+=dic[chrom][i]
+                    else:auc+=dic[chrom][i]
                     i+=1
                 #if substart>=0:subpeaks+=str(substart*step)+':'+str((e-1)*step)+','
                 auc=auc*step
                 total_width_above_cutoff+=width_above_cutoff
                 if calculate_P_value:
                     pvl=functions.div(float(str(ppois(v.item(),m.item())).split()[-1]),log(10))
-                    outf.write(chr + '\t' + str(start) + '\t' + str(regions[chr][start]) +
-                        '\t' + str(functions.div((regions[chr][start] + start),2)) + '\t' + str(width_above_cutoff) +
+                    outf.write(chrom + '\t' + str(start) + '\t' + str(regions[chrom][start]) +
+                        '\t' + str(functions.div((regions[chrom][start] + start),2)) + '\t' + str(width_above_cutoff) +
                          '\t' + str(auc) + '\t' + str(v) + '\t' + str(0-pvl) + "\n")
                 else:
-                    outf.write(chr + '\t' + str(start) + '\t' + str(regions[chr][start]) + '\t' + 
-                        str(functions.div((regions[chr][start]+start),2)) + '\t' + str(width_above_cutoff) + '\t' + 
+                    outf.write(chrom + '\t' + str(start) + '\t' + str(regions[chrom][start]) + '\t' + 
+                        str(functions.div((regions[chrom][start]+start),2)) + '\t' + str(width_above_cutoff) + '\t' + 
                         str(auc) + '\t' + str(v) + '\n')
         sys.stdout.write('total_width_above_cutoff: '+str(total_width_above_cutoff) + "\n")
         outf.close()
@@ -399,18 +404,18 @@ class Wig:
         dic=smts.data
         rhalfdis=functions.div(distance,2)
         halfdis=functions.div(distance,(2*twig.step))
-        for chr in dic:
-            lth=functions.div(twig.chrSize(chr),twig.step)-1
-            sys.stdout.write(chr+"\n")
+        for chrom in dic:
+            lth=functions.div(twig.chrSize(chrom),twig.step)-1
+            sys.stdout.write(chrom+"\n")
             if lth==0:continue
-            poses=dic[chr]['p']
-            valus=dic[chr]['v']
+            poses=dic[chrom]['p']
+            valus=dic[chrom]['v']
             if poscal>0:
-                positioning=dic[chr]['s']
-                ppos=dic[chr]['ppos']
+                positioning=dic[chrom]['s']
+                ppos=dic[chrom]['ppos']
             tlen=poses.size
             if calculate_P_value:
-                pvs=ppois(FloatVector(dic[chr]['v']),m.item())
+                pvs=ppois(FloatVector(dic[chrom]['v']),m.item())
             i=0
             while i<tlen:
                 pos=poses[i]
@@ -422,29 +427,29 @@ class Wig:
                     while(start==0):
                         if p<=width:start=1
                         if ppp-p>=functions.div(halfdis,2):
-                            if twig.data[chr][p]==min(twig.data[chr][(p-width):(p+width+1)]):start=p*twig.step+1 
-                            elif twig.data[chr][p]>valus[i]:start=p*twig.step+1
-                            elif twig.data[chr][p]<height:start=p*twig.step+1
+                            if twig.data[chrom][p]==min(twig.data[chrom][(p-width):(p+width+1)]):start=p*twig.step+1 
+                            elif twig.data[chrom][p]>valus[i]:start=p*twig.step+1
+                            elif twig.data[chrom][p]<height:start=p*twig.step+1
                         elif i>0 and p*twig.step==poses[i-1]:start=p*twig.step+1 
                         p-=1
                     p=ppp+1
                     while(end==0):
                         if (p+width)>=lth:end=lth*twig.step+1
                         elif p-ppp>=functions.div(halfdis,2):
-                            if twig.data[chr][p]==min(twig.data[chr][(p-width):(p+width+1)]):end=p*twig.step+1
-                            elif twig.data[chr][p]>valus[i]:end=p*twig.step+1
-                            elif twig.data[chr][p]<height:end=p*twig.step+1
+                            if twig.data[chrom][p]==min(twig.data[chrom][(p-width):(p+width+1)]):end=p*twig.step+1
+                            elif twig.data[chrom][p]>valus[i]:end=p*twig.step+1
+                            elif twig.data[chrom][p]<height:end=p*twig.step+1
                         elif i<(tlen-1) and p*twig.step==poses[i+1]:end=p*twig.step+1 
                         p+=1
                 if end>start:
                     if poscal>0:
                         if calculate_P_value:
-                            outf.write(chr+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\t"+str(pvs[i])+"\t"+str(positioning[i])+"\t"+str(ppos[i])+"\n")
-                        else:outf.write(chr+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\t"+str(positioning[i])+"\n")
+                            outf.write(chrom+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\t"+str(pvs[i])+"\t"+str(positioning[i])+"\t"+str(ppos[i])+"\n")
+                        else:outf.write(chrom+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\t"+str(positioning[i])+"\n")
                     else:
                         if calculate_P_value:
-                            outf.write(chr+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\t"+str(pvs[i])+"\n")
-                        else:outf.write(chr+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\n")
+                            outf.write(chrom+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\t"+str(pvs[i])+"\n")
+                        else:outf.write(chrom+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\n")
                 i+=1
         outf.close()
         return smts
@@ -521,18 +526,18 @@ class Wig:
         dic=smts.data
         rhalfdis=functions.div(distance,2)
         halfdis=functions.div(distance,(2*twig.step))
-        for chr in dic:
-            lth=functions.div(twig.chrSize(chr),twig.step)-1
-            sys.stdout.write(chr+"\n")
+        for chrom in dic:
+            lth=functions.div(twig.chrSize(chrom),twig.step)-1
+            sys.stdout.write(chrom+"\n")
             if lth==0:continue
-            poses=dic[chr]['p']
-            valus=dic[chr]['v']
+            poses=dic[chrom]['p']
+            valus=dic[chrom]['v']
             if poscal>0:
-                positioning=dic[chr]['s']
-                ppos=dic[chr]['ppos']
+                positioning=dic[chrom]['s']
+                ppos=dic[chrom]['ppos']
             tlen=poses.size
             if calculate_P_value:
-                pvs=ppois(FloatVector(dic[chr]['v']),m.item())
+                pvs=ppois(FloatVector(dic[chrom]['v']),m.item())
             i=0
             while i<tlen:
                 pos=poses[i]
@@ -549,29 +554,29 @@ class Wig:
                     while(start==0):
                         if p<=width:start=1
                         if ppp-p>=functions.div(halfdis,2):
-                            if twig.data[chr][p]==min(twig.data[chr][(p-width):(p+width+1)]):start=p*twig.step+1 
-                            elif twig.data[chr][p]>valus[i]:start=p*twig.step+1
-                            elif twig.data[chr][p]<height:start=p*twig.step+1
+                            if twig.data[chrom][p]==min(twig.data[chrom][(p-width):(p+width+1)]):start=p*twig.step+1 
+                            elif twig.data[chrom][p]>valus[i]:start=p*twig.step+1
+                            elif twig.data[chrom][p]<height:start=p*twig.step+1
                         elif i>0 and p*twig.step==poses[i-1]:start=p*twig.step+1 
                         p-=1
                     p=ppp+1
                     while(end==0):
                         if (p+width)>=lth:end=lth*twig.step+1
                         elif p-ppp>=functions.div(halfdis,2):
-                            if twig.data[chr][p]==min(twig.data[chr][(p-width):(p+width+1)]):end=p*twig.step+1
-                            elif twig.data[chr][p]>valus[i]:end=p*twig.step+1
-                            elif twig.data[chr][p]<height:end=p*twig.step+1
+                            if twig.data[chrom][p]==min(twig.data[chrom][(p-width):(p+width+1)]):end=p*twig.step+1
+                            elif twig.data[chrom][p]>valus[i]:end=p*twig.step+1
+                            elif twig.data[chrom][p]<height:end=p*twig.step+1
                         elif i<(tlen-1) and p*twig.step==poses[i+1]:end=p*twig.step+1 
                         p+=1
                 if end>start:
                     if poscal>0:
                         if calculate_P_value:
-                            outf.write(chr+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\t"+str(pvs[i])+"\t"+str(positioning[i])+"\t"+str(ppos[i])+"\n")
-                        else:outf.write(chr+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\t"+str(positioning[i])+"\n")
+                            outf.write(chrom+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\t"+str(pvs[i])+"\t"+str(positioning[i])+"\t"+str(ppos[i])+"\n")
+                        else:outf.write(chrom+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\t"+str(positioning[i])+"\n")
                     else:
                         if calculate_P_value:
-                            outf.write(chr+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\t"+str(pvs[i])+"\n")
-                        else:outf.write(chr+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\n")
+                            outf.write(chrom+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\t"+str(pvs[i])+"\n")
+                        else:outf.write(chrom+"\t"+str(start)+"\t"+str(end)+"\t"+str(pos+1)+"\t"+str(valus[i])+"\n")
                 i+=1
         outf.close()
         return smts
@@ -675,15 +680,15 @@ class Wig:
                      "\n")
                 return False
             fd=functions.div(step,self.step)
-            for chr in self.data:
-                lth=self.data[chr].size
+            for chrom in self.data:
+                lth=self.data[chrom].size
                 nlth=functions.div(lth,fd)
                 lst=numpy.array([0.0])
                 lst.resize(nlth,refcheck=0)
                 for npos in range(0,nlth):
-                    for pos in range(npos*fd,(npos+1)*fd):lst[npos]+=self.data[chr][pos]
-                self.data[chr]=lst
-                self.data[chr]=functions.div(self.data[chr],fd)
+                    for pos in range(npos*fd,(npos+1)*fd):lst[npos]+=self.data[chrom][pos]
+                self.data[chrom]=lst
+                self.data[chrom]=functions.div(self.data[chrom],fd)
         if step<self.step:
             if self.step%step!=0:
                 sys.stdout.write('Wrong: the fold change between new step ' + 
@@ -691,15 +696,15 @@ class Wig:
                     ' is not integer! ' + str(int(self.step)%step) + "\n")
                 return False
             fd=functions.div(self.step,step)
-            for chr in self.data:
-                lth=self.data[chr].size
+            for chrom in self.data:
+                lth=self.data[chrom].size
                 nlth=lth*fd
                 lst=numpy.array([0.0])
                 lst.resize(nlth,refcheck=0)
                 for pos in range(0,lth):
-                    for npos in range(pos*fd,(pos+1)*fd):lst[npos]=self.data[chr][pos]
-                self.data[chr]=lst
-                self.data[chr]=self.data[chr]
+                    for npos in range(pos*fd,(pos+1)*fd):lst[npos]=self.data[chrom][pos]
+                self.data[chrom]=lst
+                self.data[chrom]=self.data[chrom]
         self.step=step
         return True
     
@@ -724,32 +729,32 @@ class Wig:
         sum1=wig1.sum()
         sum2=wig2.sum()
         tlen=0
-        for chr in wig1.data:tlen+=len(wig1.data[chr])
+        for chrom in wig1.data:tlen+=len(wig1.data[chrom])
         donenum=0
         ctime=time()
-        for chr in wig1.data:
+        for chrom in wig1.data:
             if tchr!='' and chr!=tchr:continue
-            if chr in wig2.data:
-                wig1.data[chr]+=1
-                wig2.data[chr]+=1
-                out.data[chr]=numpy.array(0.0)
-                lth1=len(wig1.data[chr])
-                lth2=len(wig2.data[chr])
+            if chrom in wig2.data:
+                wig1.data[chrom]+=1
+                wig2.data[chrom]+=1
+                out.data[chrom]=numpy.array(0.0)
+                lth1=len(wig1.data[chrom])
+                lth2=len(wig2.data[chrom])
                 lth=max(lth1,lth2)
-                if lth>lth2:wig2.data[chr].resize(lth,refcheck=0)
-                elif lth>lth1:wig1.data[chr].resize(lth,refcheck=0)
-                out.data[chr].resize(lth,refcheck=0)
+                if lth>lth2:wig2.data[chrom].resize(lth,refcheck=0)
+                elif lth>lth1:wig1.data[chrom].resize(lth,refcheck=0)
+                out.data[chrom].resize(lth,refcheck=0)
                 for p in range(0,lth):
-                    #if wig1.data[chr][p]<1:wig1.data[chr][p]=1
-                    #if wig2.data[chr][p]<1:wig2.data[chr][p]=1
-                    vec=r.c(wig1.data[chr][p],wig2.data[chr][p],sum1-wig1.data[chr][p],sum2-wig2.data[chr][p])
-                    if (wig1.data[chr][p]==wig2.data[chr][p]):out.data[chr][p]=0
+                    #if wig1.data[chrom][p]<1:wig1.data[chrom][p]=1
+                    #if wig2.data[chrom][p]<1:wig2.data[chrom][p]=1
+                    vec=r.c(wig1.data[chrom][p],wig2.data[chrom][p],sum1-wig1.data[chrom][p],sum2-wig2.data[chrom][p])
+                    if (wig1.data[chrom][p]==wig2.data[chrom][p]):out.data[chrom][p]=0
                     else:
                         test=r['chisq.test'](r.matrix(vec,nrow=2))
                         pvl=float(str(test[2]).split()[-1])
                         if pvl<1e-323:pvl=1e-323
-                        if wig1.data[chr][p]>wig2.data[chr][p]:out.data[chr][p]=-log10(pvl)
-                        else:out.data[chr][p]=log10(pvl)
+                        if wig1.data[chrom][p]>wig2.data[chrom][p]:out.data[chrom][p]=-log10(pvl)
+                        else:out.data[chrom][p]=log10(pvl)
                     donenum+=1
                     if time()-ctime>10:
                         ctime=time()
@@ -759,7 +764,7 @@ class Wig:
         wig2.clearEmptyEnd()
         return out
 
-    def chrSize(self,chr):
+    def chrSize(self,chrom):
         '''
         Description:
             retrive chrosome size by name
@@ -770,18 +775,18 @@ class Wig:
             Interger value (step size has been multiplied)
             
         '''
-        if chr in self.data:return self.data[chr].size*self.step
+        if chrom in self.data:return self.data[chrom].size*self.step
         else:return 0
-    def chrSum(self,chr):
+    def chrSum(self,chrom):
         '''
         Description:
             Retrieve the sum of occupancy by chrosome
         Parameter:
-            chr: the name of chrosome whose occupancy sum is to be retrieved
+            chrom: the name of chrosome whose occupancy sum is to be retrieved
         Value:
             Float value
         '''
-        return self.data[chr].sum()*self.step
+        return self.data[chrom].sum()*self.step
     def clearEmptyEnd(self):
         '''
         Description:
@@ -791,10 +796,10 @@ class Wig:
         Value:
             None
         '''
-        for chr in self.data:
-            size=len(self.data[chr])
-            while self.data[chr][size-1]==0 and size>0:size-=1#self.data[chr].pop()
-            self.data[chr].resize(size,refcheck=0)
+        for chrom in self.data:
+            size=len(self.data[chrom])
+            while self.data[chrom][size-1]==0 and size>0:size-=1#self.data[chrom].pop()
+            self.data[chrom].resize(size,refcheck=0)
     def divideAndLog2(self,wig2):
         '''
         Description:
@@ -811,19 +816,19 @@ class Wig:
         if wig1.step!=wig2.step:
             wig2.changeStep(wig1.step)
         chrs={}
-        for chr in wig1.data:chrs[chr]=1
-        for chr in wig2.data:chrs[chr]=1
+        for chrom in wig1.data:chrs[chrom]=1
+        for chrom in wig2.data:chrs[chrom]=1
         chrs=list(chrs.keys())
-        for chr in chrs:
-            lth1=len(wig1.data[chr])
-            lth2=len(wig2.data[chr])
-            if lth1>lth2:wig2.data[chr].resize(lth1,refcheck=0)
-            else:wig1.data[chr].resize(lth2,refcheck=0)
+        for chrom in chrs:
+            lth1=len(wig1.data[chrom])
+            lth2=len(wig2.data[chrom])
+            if lth1>lth2:wig2.data[chrom].resize(lth1,refcheck=0)
+            else:wig1.data[chrom].resize(lth2,refcheck=0)
             lth=max(lth1,lth2)
-            wig1.data[chr]+=1
-            wig2.data[chr]+=1
-            wig1.data[chr] = functions.div(wig1.data[chr], wig2.data[chr])
-            wig1.data[chr][0:lth]=r.log2(FloatVector(wig1.data[chr]))[0:lth]
+            wig1.data[chrom]+=1
+            wig2.data[chrom]+=1
+            wig1.data[chrom] = functions.div(wig1.data[chrom], wig2.data[chrom])
+            wig1.data[chrom][0:lth]=r.log2(FloatVector(wig1.data[chrom]))[0:lth]
         return wig1
     def divide(self,wig2):
         '''
@@ -841,19 +846,19 @@ class Wig:
         if wig1.step!=wig2.step:
             wig2.changeStep(wig1.step)
         chrs={}
-        for chr in wig1.data:chrs[chr]=1
-        for chr in wig2.data:chrs[chr]=1
+        for chrom in wig1.data:chrs[chrom]=1
+        for chrom in wig2.data:chrs[chrom]=1
         chrs=list(chrs.keys())
-        for chr in chrs:
-            lth1=len(wig1.data[chr])
-            lth2=len(wig2.data[chr])
-            if lth1>lth2:wig2.data[chr].resize(lth1,refcheck=0)
-            else:wig1.data[chr].resize(lth2,refcheck=0)
+        for chrom in chrs:
+            lth1=len(wig1.data[chrom])
+            lth2=len(wig2.data[chrom])
+            if lth1>lth2:wig2.data[chrom].resize(lth1,refcheck=0)
+            else:wig1.data[chrom].resize(lth2,refcheck=0)
             lth=max(lth1,lth2)
-            #wig1.data[chr]+=1
-            wig2.data[chr]+=1
-            wig1.data[chr]= functions.div(wig1.data[chr], wig2.data[chr])
-            #wig1.data[chr][0:lth]=r.log2(FloatVector(wig1.data[chr]))[0:lth]
+            #wig1.data[chrom]+=1
+            wig2.data[chrom]+=1
+            wig1.data[chrom]= functions.div(wig1.data[chrom], wig2.data[chrom])
+            #wig1.data[chrom][0:lth]=r.log2(FloatVector(wig1.data[chrom]))[0:lth]
         return wig1
     def dfTest(self,cwig,test='C'):
         '''
@@ -907,26 +912,26 @@ class Wig:
         sum1=int(self.sum())
         sum2=int(wig2.sum())
         tlen=0
-        for chr in self.data:tlen+=len(self.data[chr])
+        for chrom in self.data:tlen+=len(self.data[chrom])
         donenum=0
-        for chr in self.data:
+        for chrom in self.data:
             if chr in wig2.data:
-                out.data[chr]=numpy.array(0.0)
-                lth1=len(self.data[chr])
-                lth2=len(wig2.data[chr])
+                out.data[chrom]=numpy.array(0.0)
+                lth1=len(self.data[chrom])
+                lth2=len(wig2.data[chrom])
                 lth=max(lth1,lth2)
-                if lth>lth2:wig2.data[chr].resize(lth1,refcheck=0)
-                elif lth>lth1:self.data[chr].resize(lth2,refcheck=0)
-                out.data[chr].resize(lth,refcheck=0)
+                if lth>lth2:wig2.data[chrom].resize(lth1,refcheck=0)
+                elif lth>lth1:self.data[chrom].resize(lth2,refcheck=0)
+                out.data[chrom].resize(lth,refcheck=0)
                 for p in range(0,lth):
-                    vec=r.c(int(self.data[chr][p]),int(wig2.data[chr][p]),sum1-int(self.data[chr][p]),sum2-int(wig2.data[chr][p]))
-                    if (self.data[chr][p]==wig2.data[chr][p]):out.data[chr][p]=1
+                    vec=r.c(int(self.data[chrom][p]),int(wig2.data[chrom][p]),sum1-int(self.data[chrom][p]),sum2-int(wig2.data[chrom][p]))
+                    if (self.data[chrom][p]==wig2.data[chrom][p]):out.data[chrom][p]=1
                     else:
                         test=r['fisher.test'](r.matrix(vec,nrow=2))
                         pvl=float(str(test).split()[17])
                         if pvl<1e-323:pvl=1e-323
-                        if self.data[chr][p]>wig2.data[chr][p]:out.data[chr][p]=-log10(pvl)
-                        else:out.data[chr][p]=log10(pvl)
+                        if self.data[chrom][p]>wig2.data[chrom][p]:out.data[chrom][p]=-log10(pvl)
+                        else:out.data[chrom][p]=log10(pvl)
                     donenum+=1
                     if donenum%1000==0:sys.stdout.write(str(functions.div(donenum*100.0,tlen)) +
                         " percent of " + str(tlen) + "done\n")
@@ -944,7 +949,7 @@ class Wig:
         Value:
             None
         '''
-        for chr in self.data:self.data[chr]*=fold
+        for chrom in self.data:self.data[chrom]*=fold
 
     def getChrs(self):
         '''
@@ -967,8 +972,8 @@ class Wig:
             Interger value
         '''
         lth=0
-        for chr in self.data:
-            lth+=self.chrSize(chr)#self.step*self.data[chr].size
+        for chrom in self.data:
+            lth+=self.chrSize(chrom)#self.step*self.data[chrom].size
         return lth
     def histogram(self,bnum=100000,nonzero_end=False):
         ma,mi=self.maxmin(nonzero=nonzero_end)
@@ -1026,7 +1031,8 @@ class Wig:
         ########## ---end---add by kaifu on Aug 14, 2012 ##########
         
         if not suppress: sys.stdout.write('parsing from ' + file + "\n")
-        chr=''
+        print("WE ARE HERE")
+        chrom=''
         chrs=['chr1']############ test #############
         pn=1
         pos=-1
@@ -1044,8 +1050,8 @@ class Wig:
                 
                 if not suppress:sys.stdout.write(str(newchr) + 
                     ' start from position '+ str(newstart) + "\n")#/instep
-                if chr != '':
-                    if chr not in self.data:self.data[chr]=numpy.array([0.0])
+                if chrom != '':
+                    if chrom not in self.data:self.data[chrom]=numpy.array([0.0])
                     nplst=numpy.array(lst)#[0:]
                     if instep!=self.step:
                         lth=len(lst)*functions.div(instep*1.0,self.step)
@@ -1056,10 +1062,10 @@ class Wig:
                             if instep<self.step:nplst[functions.div(pos*instep,self.step)]+=lst[pos] ########## add by kaifu on Sep 6, 2012 ##########
                             else:
                                 for tpos in range(functions.div(pos*instep,self.step),functions.div((pos+1)*instep,self.step)):nplst[functions.div(tpos,self.step)]+=functions.div(lst[pos]*1.0*self.step,instep) ########## add by kaifu on Sep 6, 2012 ##########
-                    self.data[chr].resize(functions.div(start,self.step)+len(nplst),refcheck=0)
-                    self.data[chr][(functions.div(start,self.step)):]=nplst
+                    self.data[chrom].resize(functions.div(start,self.step)+len(nplst),refcheck=0)
+                    self.data[chrom][(functions.div(start,self.step)):]=nplst
                 lst=[]
-                chr=newchr
+                chrom=newchr
                 start=newstart-1
             else:
                 try:
@@ -1071,8 +1077,8 @@ class Wig:
                     continue
                 #print line.split()[0],lst[-1]
                 #lst.append(value)
-        #if chr != '':
-        if chr not in self.data:self.data[chr]=numpy.array([0.0])
+        #if chrom != '':
+        if chrom not in self.data:self.data[chrom]=numpy.array([0.0])
         nplst=numpy.array(lst)#[0:]
         if instep!=self.step:
             lth=len(lst)*(functions.div(instep*1.0,self.step))
@@ -1083,8 +1089,8 @@ class Wig:
                 if instep<self.step:nplst[functions.div(pos*instep,self.step)]+=lst[pos] ########## add by kaifu on Sep 6, 2012 ##########
                 else:
                     for tpos in range(functions.div(pos*instep,self.step),functions.div((pos+1)*instep,self.step)):nplst[functions.div(tpos,self.step)]+=functions.div(lst[pos]*1.0*self.step,instep) ########## add by kaifu on Sep 6, 2012 ##########
-        self.data[chr].resize(functions.div(start,self.step)+len(nplst),refcheck=0)
-        self.data[chr][(functions.div(start,self.step)):]=nplst
+        self.data[chrom].resize(functions.div(start,self.step)+len(nplst),refcheck=0)
+        self.data[chrom][(functions.div(start,self.step)):]=nplst
 
     def loadVar(self,file,gfile,suppress=False):
         '''
@@ -1105,7 +1111,7 @@ class Wig:
         step=self.step
 
         starttime=time()
-        chr,size='',0
+        chrom,size='',0
         if file[-3:]=='wig':fi=open(file)
         if file[-6:]=='wig.gz':
             import gzip
@@ -1114,8 +1120,8 @@ class Wig:
             #print line
             if line[0]=='t':continue
             elif line[0]=='v':
-                #if chr != '':
-                #    if not self.data.has_key(chr):self.data[chr]=numpy.array([0.0])#lst
+                #if chrom != '':
+                #    if not self.data.has_key(chrom):self.data[chrom]=numpy.array([0.0])#lst
                 #    print line[:-1]
                 if not suppress: sys.stdout.write(line[:-1] + "\n")
                 col=line.split()
@@ -1124,11 +1130,11 @@ class Wig:
                     kv=term.split("=")
                     if kv[0]=='chrom':
                         right+=1
-                        chr=kv[1]
-                        #print chr,#line[:-1]
-                        if chr not in self.data:
-                            self.data[chr]=numpy.array([0.0])#lst
-                        lst=self.data[chr]#chr=kv[1]
+                        chrom=kv[1]
+                        #print chrom,#line[:-1]
+                        if chrom not in self.data:
+                            self.data[chrom]=numpy.array([0.0])#lst
+                        lst=self.data[chrom]#chrom=kv[1]
                         size=lst.size
                     elif kv[0]=='span':
                         inspan=int(kv[1])
@@ -1171,9 +1177,9 @@ class Wig:
         '''
         #return self.sum()*1.0/self.gsize()
         size,value=0,0
-        for chr in self.data:
-            value+=self.data[chr].sum()
-            size+=self.data[chr].size
+        for chrom in self.data:
+            value+=self.data[chrom].sum()
+            size+=self.data[chrom].size
         return functions.div(value,size)
     def multiply(self,wig2):
         '''
@@ -1189,17 +1195,17 @@ class Wig:
             wig2.changeStep(self.step)
         wg=Wig(step=self.step)
         chrs={}
-        for chr in self.data:chrs[chr]=1
-        for chr in wig2.data:chrs[chr]=1
+        for chrom in self.data:chrs[chrom]=1
+        for chrom in wig2.data:chrs[chrom]=1
         chrs=list(chrs.keys())
-        for chr in chrs:
-            if chr not in self.data:self.addChr(chr)
-            if chr not in wig2.data:wig2.addChr(chr)
-            lth1=self.data[chr].size
-            lth2=wig2.data[chr].size
-            if lth1>lth2:wig2.data[chr].resize(lth1,refcheck=0)
-            elif lth1<lth2:self.data[chr].resize(lth2,refcheck=0)
-            wg.data[chr]=self.data[chr]*wig2.data[chr]
+        for chrom in chrs:
+            if chrom not in self.data:self.addChr(chrom)
+            if chrom not in wig2.data:wig2.addChr(chrom)
+            lth1=self.data[chrom].size
+            lth2=wig2.data[chrom].size
+            if lth1>lth2:wig2.data[chrom].resize(lth1,refcheck=0)
+            elif lth1<lth2:self.data[chrom].resize(lth2,refcheck=0)
+            wg.data[chrom]=self.data[chrom]*wig2.data[chrom]
         return wg
     def non0to1(self):
         '''
@@ -1263,10 +1269,10 @@ class Wig:
             None
         '''
         chrs={}
-        for chr in self.data:chrs[chr]=1
+        for chrom in self.data:chrs[chrom]=1
         chrs=list(chrs.keys())
-        for chr in chrs:
-            self.data[chr]=self.data[chr]**p
+        for chrom in chrs:
+            self.data[chrom]=self.data[chrom]**p
         return True
 
     def ppois(self,wig2,tchr=''):
@@ -1287,33 +1293,33 @@ class Wig:
         if wig1.step!=wig2.step:wig2.changeStep(wig1.step)
         out=Wig(step=wig1.step)
         donenum=0
-        for chr in wig1.data:
-            sys.stdout.write(chr + "\n")
-            if tchr!='' and chr!=tchr:continue
-            if chr in wig2.data:
-                out.data[chr]=numpy.array(0.0)
-                lth1=wig1.data[chr].size
-                lth2=wig2.data[chr].size
+        for chrom in wig1.data:
+            sys.stdout.write(chrom + "\n")
+            if tchr!='' and chrom!=tchr:continue
+            if chrom in wig2.data:
+                out.data[chrom]=numpy.array(0.0)
+                lth1=wig1.data[chrom].size
+                lth2=wig2.data[chrom].size
                 lth=max(lth1,lth2)
-                if lth>lth2:wig2.data[chr].resize(lth,refcheck=0)
-                elif lth>lth1:wig1.data[chr].resize(lth,refcheck=0)
-                out.data[chr].resize(lth,refcheck=0)
+                if lth>lth2:wig2.data[chrom].resize(lth,refcheck=0)
+                elif lth>lth1:wig1.data[chrom].resize(lth,refcheck=0)
+                out.data[chrom].resize(lth,refcheck=0)
                 tstr1=numpy.array(0.0)
                 tstr2=numpy.array(0.0)
                 tstr1.resize(lth,refcheck=0)
                 tstr2.resize(lth,refcheck=0)
                 p=0
                 while p<lth:
-                    if wig1.data[chr][p]>wig2.data[chr][p]:
-                        if wig1.data[chr][p]<1:tstr1[p]=1
-                        else:tstr1[p]=wig1.data[chr][p]
-                        if wig2.data[chr][p]<1:tstr2[p]=1
-                        else:tstr2[p]=wig2.data[chr][p]
+                    if wig1.data[chrom][p]>wig2.data[chrom][p]:
+                        if wig1.data[chrom][p]<1:tstr1[p]=1
+                        else:tstr1[p]=wig1.data[chrom][p]
+                        if wig2.data[chrom][p]<1:tstr2[p]=1
+                        else:tstr2[p]=wig2.data[chrom][p]
                     else:
-                        if wig1.data[chr][p]<1:tstr2[p]=1
-                        else:tstr2[p]=wig1.data[chr][p]
-                        if wig2.data[chr][p]<1:tstr1[p]=1
-                        else:tstr1[p]=wig2.data[chr][p]
+                        if wig1.data[chrom][p]<1:tstr2[p]=1
+                        else:tstr2[p]=wig1.data[chrom][p]
+                        if wig2.data[chrom][p]<1:tstr1[p]=1
+                        else:tstr1[p]=wig2.data[chrom][p]
                     p+=1
                 frglen=1000000   # Fragmentation was implemented by Kaifu Chen on Feb 22, 2013. The reason is that R can not allocate vector space larger than 1Gb.
                 frags={}
@@ -1327,9 +1333,9 @@ class Wig:
                     result=pp(FloatVector(tstr1[start:end]),FloatVector(tstr2[start:end]))
                     p=start
                     while p<end:
-                        if tstr1[p]==tstr2[p]:out.data[chr][p]=0
-                        elif wig1.data[chr][p]>wig2.data[chr][p]:out.data[chr][p]=0-result[p-start]
-                        elif wig1.data[chr][p]<wig2.data[chr][p]:out.data[chr][p]=result[p-start]
+                        if tstr1[p]==tstr2[p]:out.data[chrom][p]=0
+                        elif wig1.data[chrom][p]>wig2.data[chrom][p]:out.data[chrom][p]=0-result[p-start]
+                        elif wig1.data[chrom][p]<wig2.data[chrom][p]:out.data[chrom][p]=result[p-start]
                         p+=1
         return out
 
@@ -1352,17 +1358,17 @@ class Wig:
     
     
     
-    def resizeChr(self,chr,size):
+    def resizeChr(self,chrom,size):
         '''
         Description:
             change chrosome size
         Parameter:
-            chr: the name of the chrosome whose size is going to be changed
+            chrom: the name of the chrosome whose size is going to be changed
             size: the new size to be setted for the chrosome
         Value:
             None
         '''
-        self.data[chr].resize(functions.div(size,self.step),refcheck=0)
+        self.data[chrom].resize(functions.div(size,self.step),refcheck=0)
     def rvNeg(self):
         '''
         Description:
@@ -1372,10 +1378,10 @@ class Wig:
         Value:
             None
         '''
-        for chr in self.data:
-            end=functions.div(self.chrSize(chr),self.step)
-            t=self.data[chr]
-            self.data[chr]=functions.div(((t**2)**0.5+t),2)
+        for chrom in self.data:
+            end=functions.div(self.chrSize(chrom),self.step)
+            t=self.data[chrom]
+            self.data[chrom]=functions.div(((t**2)**0.5+t),2)
 
 
     def save(self,file,format="fixed",step=None,suppress=False):
@@ -1398,8 +1404,8 @@ class Wig:
             lth=len(chrs)-1
             count,total=0,1000
             for i in range(total):
-                chr=chrs[randint(0,lth)]
-                val=self.data[chr][randint(0,sef.data[chr].size-1)]
+                chrom=chrs[randint(0,lth)]
+                val=self.data[chrom][randint(0,sef.data[chrom].size-1)]
                 if val!=0:count+=1
             if functions.div(count*1.0,total)>=0.5:format='fixed'
             else:format='var'
@@ -1409,42 +1415,42 @@ class Wig:
             for cr in self.data:tlen+=self.data[cr].size
             from numpy.random import seed,randint
         acculen=0
-        for chr in self.data:
-            #if self.data[chr].sum()==0:continue
-            if not suppress:sys.stdout.write(chr + "\n")
+        for chrom in self.data:
+            #if self.data[chrom].sum()==0:continue
+            if not suppress:sys.stdout.write(chrom + "\n")
             if format=='fixed':
-                outf.write("fixedStep chrom="+chr+" start=1  step="+str(step)+" span="+str(step)+"\n")
-                lth=len(self.data[chr])
+                outf.write("fixedStep chrom="+chrom+" start=1  step="+str(step)+" span="+str(step)+"\n")
+                lth=len(self.data[chrom])
                 ot=[]
-                for v in self.data[chr]:ot.append(str(v))#str(self.data[chr][i]))
+                for v in self.data[chrom]:ot.append(str(v))#str(self.data[chrom][i]))
                 outf.write('\n'.join(ot)+"\n")
             elif format=='var':
-                lth=len(self.data[chr])
-                outf.write("variableStep chrom="+chr+" span="+str(step)+"\n")
+                lth=len(self.data[chrom])
+                outf.write("variableStep chrom="+chrom+" span="+str(step)+"\n")
                 #for i in range(0,lth):
                 i=0
                 while i<lth:
-                    if self.data[chr][i]!=0:outf.write(str(i*step)+'\t'+str(self.data[chr][i])+'\n')
+                    if self.data[chrom][i]!=0:outf.write(str(i*step)+'\t'+str(self.data[chrom][i])+'\n')
                     i+=1
             elif format=='wiq':
-                lth=len(self.data[chr])
-                #outf.write("variableStep chrom="+chr+" span="+str(step)+"\n")
+                lth=len(self.data[chrom])
+                #outf.write("variableStep chrom="+chrom+" span="+str(step)+"\n")
                 #for i in range(0,lth):
                 i=0
                 while i<lth:
-                    #if self.data[chr][i]!=0:outf.write(str(i*step)+'\t'+str(self.data[chr][i])+'\n')
+                    #if self.data[chrom][i]!=0:outf.write(str(i*step)+'\t'+str(self.data[chrom][i])+'\n')
                     acculen+=1
                     seed(acculen)
-                    outf.write(str(self.data[chr][i])+'\t'+str(randint(0,tlen))+'\t'+chr+'\t'+str(i*step)+'\n')
+                    outf.write(str(self.data[chrom][i])+'\t'+str(randint(0,tlen))+'\t'+chrom+'\t'+str(i*step)+'\n')
                     i+=1
             else:
                 sys.stdout.write(',format not recogonized, will be saved in fixed format, ')
-                outf.write("fixedStep chrom="+chr+" start=1  step="+str(step)+" span="+str(step)+"\n")
-                lth=len(self.data[chr])
-                for i in range(0,lth):outf.write(str(self.data[chr][i])+"\n")
+                outf.write("fixedStep chrom="+chrom+" start=1  step="+str(step)+" span="+str(step)+"\n")
+                lth=len(self.data[chrom])
+                for i in range(0,lth):outf.write(str(self.data[chrom][i])+"\n")
         outf.close()
         sys.stdout.write('completed')
-    def saveChr(self,file,chr=None,lth=None,format="fixed",step=10):
+    def saveChr(self,file,chrom=None,lth=None,format="fixed",step=10):
         '''
         Description:
             Save data to wiggle format file by chrosome name
@@ -1452,20 +1458,20 @@ class Wig:
             file: a path to the output file
             format: the format of the output wiggle file, could be 'fixed' or 'var'
             step: the step size of the ouput wiggle file
-            chr: the name of the chrosome that is going to be saved
+            chrom: the name of the chrosome that is going to be saved
             lth: the length of the chrosome to be saved, start from 1 to lth
         Value:
             None
         '''
-        tchr=chr
+        tchr=chrom
         sys.stdout.write('saving wig to' + file + ' ')
         outf=open(file,"w")
-        for chr in self.data:
-            if chr!=tchr:continue
+        for chrom in self.data:
+            if chrom!=tchr:continue
             if format=='fixed':
-                outf.write("fixedStep chrom="+chr+" start=1  step="+str(step)+" span="+str(step)+"\n")
-                if lth==None:lth=len(self.data[chr])*self.step
-                for i in range(0,lth,step):outf.write(str(self.data[chr][functions.div(i,self.step)])+"\n")
+                outf.write("fixedStep chrom="+chrom+" start=1  step="+str(step)+" span="+str(step)+"\n")
+                if lth==None:lth=len(self.data[chrom])*self.step
+                for i in range(0,lth,step):outf.write(str(self.data[chrom][functions.div(i,self.step)])+"\n")
         outf.close()
         sys.stdout.write('completed\n')
 
@@ -1481,8 +1487,8 @@ class Wig:
         sz=self.size()
         avg=functions.div(self.sum(),sz)
         sqm=0
-        for chr in self.data:
-            for v in self.data[chr]:sqm+=(v-avg)*(v-avg)
+        for chrom in self.data:
+            for v in self.data[chrom]:sqm+=(v-avg)*(v-avg)
         sqm=functions.div(sqm,sz)
         return sqrt(sqm)
     
@@ -1503,12 +1509,12 @@ class Wig:
         for line in open(gfile):
             col=line.split()
             sizes[col[0]]=int(col[1])
-        for chr in self.data:
-            if chr not in sizes:self.data.pop(chr)
+        for chrom in self.data:
+            if chrom not in sizes:self.data.pop(chrom)
             else:
-                sys.stdout.write(str(self.data[chr].size) + ' ')
-                self.data[chr].resize(functions.div(sizes[chr],self.step),refcheck=0)
-                sys.stdout.write(str(self.data[chr].size)  + "\n")
+                sys.stdout.write(str(self.data[chrom].size) + ' ')
+                self.data[chrom].resize(functions.div(sizes[chrom],self.step),refcheck=0)
+                sys.stdout.write(str(self.data[chrom].size)  + "\n")
     def smooth(self,lmd=100):
         '''
         Description:
@@ -1527,14 +1533,14 @@ class Wig:
         wg2=deepcopy(self.data)
         self.foldChange(0.0)
         wg1=self.data
-        for chr in wg1:
-            lth=wg1[chr].size
+        for chrom in wg1:
+            lth=wg1[chrom].size
             if tlmd!=0-hlmd:
-                for p in range(0-hlmd,tlmd):wg1[chr][hlmd:(lth-tlmd)]+=wg2[chr][(hlmd+p):(lth-tlmd+p)]
+                for p in range(0-hlmd,tlmd):wg1[chrom][hlmd:(lth-tlmd)]+=wg2[chrom][(hlmd+p):(lth-tlmd+p)]
             else:
-                for p in range(0-hlmd+1,tlmd):wg1[chr][hlmd-1:(lth-tlmd)]+=wg2[chr][(hlmd-1+p):(lth-tlmd+p)]
-                for p in [0-hlmd,tlmd]:wg1[chr][hlmd:(lth-tlmd)]+=wg2[chr][(hlmd+p):(lth-tlmd+p)]*0.5
-            wg1[chr][hlmd:(lth-tlmd)]= functions.div(wg1[chr][hlmd:(lth-tlmd)],(lmd)*1.0)
+                for p in range(0-hlmd+1,tlmd):wg1[chrom][hlmd-1:(lth-tlmd)]+=wg2[chrom][(hlmd-1+p):(lth-tlmd+p)]
+                for p in [0-hlmd,tlmd]:wg1[chrom][hlmd:(lth-tlmd)]+=wg2[chrom][(hlmd+p):(lth-tlmd+p)]*0.5
+            wg1[chrom][hlmd:(lth-tlmd)]= functions.div(wg1[chrom][hlmd:(lth-tlmd)],(lmd)*1.0)
         self.data=wg1
         return True
     def sqrt(self):
@@ -1547,10 +1553,10 @@ class Wig:
             None
         '''
         chrs={}
-        for chr in self.data:chrs[chr]=1
+        for chrom in self.data:chrs[chrom]=1
         chrs=list(chrs.keys())
-        for chr in chrs:
-            self.data[chr]=numpy.sqrt(self.data[chr])
+        for chrom in chrs:
+            self.data[chrom]=numpy.sqrt(self.data[chrom])
         return True
     def subtract(self,wig2):
         '''
@@ -1565,15 +1571,15 @@ class Wig:
             wig2=deepcopy(wig2)
             wig2.changeStep(self.step)
         chrs={}
-        for chr in self.data:chrs[chr]=1
-        for chr in wig2.data:chrs[chr]=1
+        for chrom in self.data:chrs[chrom]=1
+        for chrom in wig2.data:chrs[chrom]=1
         chrs=list(chrs.keys())
-        for chr in chrs:
-            lth1=len(self.data[chr])
-            lth2=len(wig2.data[chr])
-            if lth1>lth2:wig2.data[chr].resize(int(lth1),refcheck=0)
-            else:self.data[chr].resize(int(lth2),refcheck=0)
-            self.data[chr]-=wig2.data[chr]
+        for chrom in chrs:
+            lth1=len(self.data[chrom])
+            lth2=len(wig2.data[chrom])
+            if lth1>lth2:wig2.data[chrom].resize(int(lth1),refcheck=0)
+            else:self.data[chrom].resize(int(lth2),refcheck=0)
+            self.data[chrom]-=wig2.data[chrom]
         wig2.clearEmptyEnd()
         return True
     def sum(self):
@@ -1611,23 +1617,23 @@ class Wig:
             hlines.append(line)
             col=line.split()
             if col[0]=='@SQ':
-                chr,clen=col[1][3:],int(col[2][3:])
-                self.data[chr]=numpy.array([0.0])
-                self.data[chr].resize(functions.div(clen,step),refcheck=0)
+                chrom,clen=col[1][3:],int(col[2][3:])
+                self.data[chrom]=numpy.array([0.0])
+                self.data[chrom].resize(functions.div(clen,step),refcheck=0)
             line=infile.readline()
             
         infile=open(sam_file)
         for i in range(len(hlines)):infile.readline()
         for line in infile:
             col=line[:-1].split('\t')
-            chr=col[2]
+            chrom=col[2]
             t1=re.findall('\d+',col[5])#.split('\d+'))
             t2=re.findall('\D+',col[5])
             start=int(col[3])
             for i in range(len(t2)):
                 if t2[i]=='M' :
                     end=start+int(t1[i])
-                    self.data[chr][functions.div(start,step):functions.div(end,step)]+=1
+                    self.data[chrom][functions.div(start,step):functions.div(end,step)]+=1
                 elif t2[i]=='D':start=start+int(t1[i])
                 elif t2[i]=='N':start=start+int(t1[i])
                 
@@ -1641,11 +1647,11 @@ class Wig:
         v=0
         m=self.mean()
         gs=0
-        for chr in self.data:
-            ts=self.data[chr].size
+        for chrom in self.data:
+            ts=self.data[chrom].size
             i=0
             while i<ts:
-                s=self.data[chr][i]-m
+                s=self.data[chrom][i]-m
                 v+=s*s
                 i+=1
             gs+=ts

@@ -19,7 +19,7 @@ import re,sys
 
 def isint(x):
     if type(x).__module__ == "numpy":
-        return(x.dtype == np.integer)
+        return(x.dtype == numpy.integer)
     else:
         return(isinstance(x,int))
 
@@ -259,7 +259,13 @@ def danpos(tpath=None,tbg=None,opath='./',\
         peakgroups,dfpeakgroups,dfpeakgroups2={},{},{}
         for groupname in pooledgroups:
             print(printhead,'calling for',groupname,'...')
-            peakgroups[groupname]=pooledgroups[groupname].callRegions(ofile=None,width=0,distance=0,pheight=pheight,height=height,calculate_P_value=1,mode='w',title_line=1,pos_only=False)
+            peakgroups[groupname]=pooledgroups[groupname].callRegions(
+                ofile=None,width=0,
+                distance=0,
+                pheight=pheight,
+                height=height,
+                calculate_P_value=1,
+                mode='w',title_line=1,pos_only=False)
             print('time elapsed:', time()-starttime,'seconds')
         
         if len(dfgroups)>0 and logp!=0:
@@ -308,7 +314,14 @@ def danpos(tpath=None,tbg=None,opath='./',\
         for groupname in pooledgroups:
             print(groupname)
             temp_peaks=merge_peaks_by_head_tail_distance(peaks=peakgroups[groupname],distance=peak_distance)
-            pooledgroups[groupname].fillRegions(regions=temp_peaks,file=os.path.join(opath,'pooled',groupname+addname+"peaks.xls"),pheight=pheight,height=height,width=peak_width,calculate_P_value=1,pos_only=False)
+            pooledgroups[groupname].fillRegions(
+                regions=temp_peaks,
+                file=os.path.join(opath,'pooled',groupname+addname+"peaks.xls"),
+                pheight=pheight,
+                height=height,
+                width=peak_width,
+                calculate_P_value=1,
+                pos_only=False)
             if len(pooledgroups)>1:pooledgroups[groupname].fillRegions(regions=peaks,file=os.path.join(opath,'pooled',groupname+addname+"refpeaks.xls"),pheight=pheight,height=height,width=peak_width,calculate_P_value=1,pos_only=False)
         if len(dfgroups)>0:
             for dfname in dfgroups:
