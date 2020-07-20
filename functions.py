@@ -655,7 +655,8 @@ def region_differential(file1,file2,gainFile,lossFile,ofile=None,widthFDRlist=No
         if t1==t2:tdiff=0
         else:tdiff=log10PropTest([t1,t2,t2,t1])
         if s1==s2:sdiff=0
-        else:sdiff=float(str(log10ppois(unnumpy(max(s1,s2)+1),unnumpy(min(s1,s2)+1))).split()[-1])
+        else:sdiff=float(str(log10ppois(unnumpy(max(s1,s2)+1),
+            unnumpy(min(s1,s2)+1))).split()[-1])
         gdiff,ldiff=float(gcol[6]),float(lcol[6])# (0-log10Pval) of gain and loss
         if fdr==1:
             wfdr = div(findRank(widthFDRlist,0-wdiff)*1.0,lw)
@@ -700,7 +701,7 @@ def peakFDR(peakFile1,peakFile2=None,wg1=None,wg2=None,fdrsimu=1000000,cut=5):
     step=wg1.step
     while i<lth:
         col=pk[i].split()
-        col[1]=div(int(col[1])/step)
+        col[1]=div(int(col[1]),step)
         col[2]=div(int(col[2]),step)
         pk[i]=col[:3]
         i+=1
@@ -732,7 +733,8 @@ def peakFDR(peakFile1,peakFile2=None,wg1=None,wg2=None,fdrsimu=1000000,cut=5):
         if t1==t2:tdiff=0
         else:tdiff=log10PropTest([t1,t2,t2,t1])
         if s1==s2:sdiff=0
-        else:sdiff=float(str(logppois(unnumpy(max(s1,s2)+1),unnumpy(min(s1,s2)+1))).split()[-1])
+        else:sdiff=float(str(logppois(unnumpy(max(s1,s2)+1),
+            unnumpy(min(s1,s2)+1))).split()[-1])
         w[i],s[i],t[i]=wdiff,sdiff,tdiff
         i+=1
         #print wdiff,sdiff,tdiff
@@ -771,7 +773,8 @@ def log10PropTest(list=[]):
         return(PVAL/log(10))
     }
     ''')
-    return float(str(log10PropTest(FloatVector(list))).split()[-1])
+    return float(str(log10PropTest(
+        unnumpy(FloatVector(list)))).split()[-1])
 
 
 
@@ -789,7 +792,7 @@ def log10FisherTest(list=[]):
     }
 
     ''')
-    return float(str(log10PropTest(FloatVector(list))).split()[-1])
+    return float(str(log10PropTest(unnumpy(FloatVector(list)))).split()[-1])
 
 
 
@@ -1136,9 +1139,11 @@ def allPositionsInOneFile(ofile='result.xls',controlPositionFile=None,treatPosit
 
             if test=='P':
                 if cwig.data[cr][div(p1,step)]>twig.data[cr][div(p2,step)]:
-                    dp1=float(ppois(unnumpy(cwig.data[cr][div(p1,step)]), unnumpy(max(twig.data[cr][div(p2,step)],1)))[0])
+                    dp1=float(ppois(unnumpy(cwig.data[cr][div(p1,step)]), 
+                        unnumpy(max(twig.data[cr][div(p2,step)],1)))[0])
                 else:
-                    dp1=float(ppois(unnumpy(twig.data[cr][div(p2,step)]), unnumpy(max(cwig.data[cr][div(p1,step)],1)))[0])
+                    dp1=float(ppois(unnumpy(twig.data[cr][div(p2,step)]), 
+                        unnumpy(max(cwig.data[cr][div(p1,step)],1)))[0])
 
             if len(c2tDic[cr][cpos])<2:# no differential position is assigned to c2tDic[cr][cpos] (cpos is the control nucleosome position position, c2tDic[cr][cpos][0] is the treatment nucleosome position position)
                 minp,maxp,maxv=min(p1,p2,dwig.data[cr].size*step-step,cwig.data[cr].size*step-step,twig.data[cr].size*step-step),max(p1,p2),0 # '*step' is add by kaifu on Mar 6, 2013
@@ -1278,7 +1283,8 @@ def log10fuztest(pc,pt,cr,cwig,twig=None,rd=None):
         v,c=var(p=pc,cr=cr,wig=cwig,step=step,rd=rd,bv=bv,bc=bc)
         if v>=bvc:return [0,sqrt(v)]
         else:
-            p=float(str(pf(unnumpy(div(v,bvc)),unnumpy(c),unnumpy(bc))).split()[-1])
+            p=float(str(pf(unnumpy(div(v,bvc)),
+                unnumpy(c),unnumpy(bc))).split()[-1])
             return[p,sqrt(v)]
     else:
         if cr not in twig.data:return(fuztest(pc=pc,pt=pt,cr=cr,cwig=cwig,twig=None,rd=rd))
@@ -1291,8 +1297,9 @@ def log10fuztest(pc,pt,cr,cwig,twig=None,rd=None):
         if pt<rd: return [0,sqrt(bvc),sqrt(bvc)]
         vc,cc,=var(p=pc,cr=cr,wig=cwig,step=step,rd=rd,bv=bv,bc=bc)
         vt,ct=var(p=pt,cr=cr,wig=twig,step=step,rd=rd,bv=bv,bc=bc)
-        if vc<vt:p=float(str(pf(div(vc,vt),cc,ct)).split()[-1])
-        else:p=float(str(pf(div(vt,vc),ct,cc)).split()[-1])
+        if vc<vt:p=float(str(pf(unnumpy(div(vc,vt)),unnumpy(cc),unnumpy(ct))).split()[-1])
+        else:p=float(str(pf(unnumpy(div(vt,vc)),
+            unnumpy(ct),unnumpy(cc))).split()[-1])
         return[p,sqrt(vc),sqrt(vt)]
 
 def var(p,cr,wig,step,rd,bv,bc):
