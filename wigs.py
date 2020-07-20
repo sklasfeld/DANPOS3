@@ -65,14 +65,14 @@ class Wigs:
             for wig in wigs:wsum[wig]=wigs[wig].sum()
             asum=functions.div(sum(wsum.values()),len(list(wsum.keys())))
             for wig in names:
-                sys.stdout.write(wig + 'from' + str(wigs[wig].sum()) + 'to ')
+                sys.stdout.write(wig + ' from ' + str(wigs[wig].sum()) + ' to ')
                 if scalepairs==None:wigs[wig].foldChange(functions.div(asum*1.0,wsum[wig]))
                 else:wigs[wig].foldChange(functions.div(scalepairs[wig]*1.0,wsum[wig]))
                 sys.stdout.write(str(wigs[wig].sum()) + "\n")
         else:
             average_total=functions.div(sum(sampling_total.values()),len(list(sampling_total.keys())))
             for name in names:
-                sys.stdout.write(name + 'from' + str(wigs[name].sum()) + 'to ')
+                sys.stdout.write(name + ' from ' + str(wigs[name].sum()) + ' to ')
                 if scalepairs==None:wigs[name].foldChange(functions.div(average_total*1.0,sampling_total[name]))
                 else:
                     wigs[name].foldChange(functions.div(scalepairs[name],sampling_total[name]))
@@ -85,7 +85,7 @@ class Wigs:
                 non0sizes[wig]=wigs[wig].non0size()
             agsize=functions.div(sum(gsizes.values())*1.0,len(list(gsizes.keys())))
             for wig in wigs:
-                sys.stdout.write(wig + 'from' + str(wigs[wig].sum()) + 'to ')
+                sys.stdout.write(wig + ' from ' + str(wigs[wig].sum()) + ' to ')
                 wigs[wig].foldChange(functions.div(non0sizes[wig],agsize))
                 sys.stdout.write(str(wigs[wig].sum()) +
                     'based on non0size' + non0sizes[wig] + 'and genome size' 

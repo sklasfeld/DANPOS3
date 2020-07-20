@@ -18,3 +18,4 @@ python libraries
 * rpy2 3.3.3
 * argparse 1.1
 * numpy 1.18.5
+* pysam

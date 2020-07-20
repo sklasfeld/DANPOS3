@@ -296,7 +296,6 @@ class Wig:
         else:outf.write('chr\tstart\tend\tcenter\twidth_above_cutoff\ttotal_signal\theight\n')
         step=self.step
         dic=self.data
-
         total_width_above_cutoff=0
         #for line in lines[1:]:
         #    col=line.split()
@@ -305,13 +304,9 @@ class Wig:
             starts.sort()
             for start in starts:
                 if regions[chrom][start]-start<width:continue
-                s,e=functions.div(start,step),functions.div(regions[chrom][start],step+1)
+                s,e=functions.div(start,step),functions.div(regions[chrom][start],step)+1
                 if dic[chrom].size<=e:dic[chrom].resize(e+1,refcheck=0)
                 width_above_cutoff=0
-                print(dic[chrom][s:e])
-                print(chrom)
-                print(s)
-                print(e)
                 v=max(dic[chrom][s:e])
                 if pos_only:v=max(v,0)
                 auc=0
@@ -1031,7 +1026,6 @@ class Wig:
         ########## ---end---add by kaifu on Aug 14, 2012 ##########
         
         if not suppress: sys.stdout.write('parsing from ' + file + "\n")
-        print("WE ARE HERE")
         chrom=''
         chrs=['chr1']############ test #############
         pn=1
@@ -1329,7 +1323,7 @@ class Wig:
                 starts.sort()
                 for start in starts :
                     end=frags[start]
-                    sys.stdout.write('region: ' + str(start) + str(end) + "\n")
+                    sys.stdout.write('region: ' + str(start) + '-' + str(end) + "\n")
                     result=pp(FloatVector(tstr1[start:end]),FloatVector(tstr2[start:end]))
                     p=start
                     while p<end:
@@ -1449,7 +1443,7 @@ class Wig:
                 lth=len(self.data[chrom])
                 for i in range(0,lth):outf.write(str(self.data[chrom][i])+"\n")
         outf.close()
-        sys.stdout.write('completed')
+        sys.stdout.write('completed\n')
     def saveChr(self,file,chrom=None,lth=None,format="fixed",step=10):
         '''
         Description:
@@ -1464,7 +1458,7 @@ class Wig:
             None
         '''
         tchr=chrom
-        sys.stdout.write('saving wig to' + file + ' ')
+        sys.stdout.write('saving wig to' + file + '\n')
         outf=open(file,"w")
         for chrom in self.data:
             if chrom!=tchr:continue

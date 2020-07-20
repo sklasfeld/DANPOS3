@@ -10,48 +10,7 @@ import gzip
 import sys
 import numpy as np
 import functions
-
-# function to check if samtools flag is true in 
-# second column of sam file
-def samflag(flag):
-    flag=int(flag)
-    flag_list={}
-    # 0. read paired
-    flag_list[0]="p"
-    # 1. read mapped in proper pair
-    flag_list[1]="P"
-    # 2. read unmapped
-    flag_list[2]="u"
-    # 3. mate unmapped
-    flag_list[3]="U"
-    # 4. read reverse strand
-    flag_list[4]="r"
-    # 5. mate reverse strand
-    flag_list[5]="R"
-    # 6. first in pair
-    flag_list[6]="1"
-    # 7. second in pair
-    flag_list[7]="2"
-    # 8. not primary alignment
-    flag_list[8]="s"
-    # 9. read fails platform/vendor quality checks
-    flag_list[9]="f"
-    # 10. read is PCR or optical duplicate
-    flag_list[10]="d"
-    # 11. supplementary alignment
-    flag_list[11]="S"
-    binary_str=str(bin(flag))[2:]
-    print(flag)
-    print(binary_str)
-    bitstring=""
-    for bit in range(0,len(binary_str)):
-        print(binary_str[bit])
-        if binary_str[bit] == "1":
-            bitstring+=flag_list[bit]
-    sys.exit()
-    return(bitstring)
-
-
+import pysam
 
 class reads:
     def __init__(self,file="",rlen=0,step=10,paired=False,cut=1e-10,format='bed'):
@@ -99,10 +58,10 @@ class reads:
         for i in range(int(minsize),int(maxsize)):
             dic[i]=0
             szsum=0
-            for chr in self.data:
-                sz=self.data[chr]['+'].size-maxsize
-                c=self.data[chr]['+'][:sz]*self.data[chr]['-'][i:(sz+i)]
-                dic[i]+=sz*functions.div((c.mean()-self.data[chr]['+'][:sz].mean()*self.data[chr]['-'][i:(sz+i)].mean()),(self.data[chr]['+'][:sz].std()*self.data[chr]['-'][i:(sz+i)].std()))
+            for chm in self.data:
+                sz=self.data[chm]['+'].size-maxsize
+                c=self.data[chm]['+'][:sz]*self.data[chm]['-'][i:(sz+i)]
+                dic[i]+=sz*functions.div((c.mean()-self.data[chm]['+'][:sz].mean()*self.data[chm]['-'][i:(sz+i)].mean()),(self.data[chm]['+'][:sz].std()*self.data[chm]['-'][i:(sz+i)].std()))
                 szsum+=sz
             dic[i]=functions.div(dic[i],(szsum*1.0))
         ks=list(dic.keys())
@@ -122,14 +81,14 @@ class reads:
         Value:
             None
         '''
-        for chr in self.data:
+        for chm in self.data:
             final_size=0
-            for str in self.data[chr]:
-                size=numpy.size(self.data[chr][str])
+            for str in self.data[chm]:
+                size=numpy.size(self.data[chm][str])
                 if size<=0:continue
-                while self.data[chr][str][size-1]==0 and size>0:size-=1#self.data[chr].pop()
+                while self.data[chm][str][size-1]==0 and size>0:size-=1#self.data[chm].pop()
                 if final_size<size:final_size=size
-            for str in self.data[chr]:self.data[chr][str].resize(final_size,refcheck=0)
+            for str in self.data[chm]:self.data[chm][str].resize(final_size,refcheck=0)
     def fragSizeDis(self,minsize=10,maxsize=300):
         '''
         Description:
@@ -159,15 +118,15 @@ class reads:
         print('calculating fragment size ...')
         dic={}
         for i in range(int(minsize),int(maxsize)):dic[i]=0
-        for chr in self.data:
-            sz=self.data[chr]['+'].size-maxsize
+        for chm in self.data:
+            sz=self.data[chm]['+'].size-maxsize
             if sz<=0:continue
-            tchr=deepcopy(self.data[chr])
+            tchr=deepcopy(self.data[chm])
             
             for stra in list(tchr.keys()): #remove clonal reads, only necessary in danpos 2.2.0 and later versions
                 tchr[stra]-=cut#all positive values are count of clonal reads
                 tchr[stra]=functions.div(((tchr[stra]**2)**0.5+tchr[stra]),2)#remove all neative values
-                tchr[stra]=self.data[chr][stra]-tchr[stra]
+                tchr[stra]=self.data[chm][stra]-tchr[stra]
             
             for i in range(int(minsize),int(maxsize)):
                 c=tchr['+'][:int(sz)]*tchr['-'][i:(int(sz)+i)]
@@ -222,7 +181,7 @@ class reads:
         for line in infile:
             try:
                 col=line[:-1].split('\t')
-                chr,start,stra=col[2],int(col[3]),col[1]
+                chm,start,stra=col[2],int(col[3]),col[1]
                 end=start+len(col[4])
                 #chr,start,end,name,score,stra=col[0:6]
                 #start,end=int(start),int(end)
@@ -234,10 +193,10 @@ class reads:
             if loadcount>0:
                 if num>loadcount:
                     self.clearEmptyEnd()
-                    for chr in self.data:
-                        lth=max(self.data[chr]['+'].size,self.data[chr]['-'].size)
-                        self.data[chr]['+'].resize(lth,refcheck=0)
-                        self.data[chr]['-'].resize(lth,refcheck=0)
+                    for chm in self.data:
+                        lth=max(self.data[chm]['+'].size,self.data[chm]['-'].size)
+                        self.data[chm]['+'].resize(lth,refcheck=0)
+                        self.data[chm]['-'].resize(lth,refcheck=0)
                     if cut>0:self.rvClonal(cut=cut)
                     print 'parsing finished,',num-1,'reads parsed'
                     return
@@ -246,19 +205,19 @@ class reads:
             if num%1000000==0: print(num,'reads parsed')
             if stra=='+':mid=functions.div(start,step)
             elif stra=='-':mid=functions.div(end,step)
-            if chr not in self.data:
-                self.data[chr]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
-                sizes[chr]=0
-            if mid>=sizes[chr]:
-                sizes[chr]=mid+1000
-                self.data[chr]['+'].resize(sizes[chr],refcheck=0)
-                self.data[chr]['-'].resize(sizes[chr],refcheck=0)
-            if mid>=0:self.data[chr][stra][mid]+=1.0
+            if chm not in self.data:
+                self.data[chm]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
+                sizes[chm]=0
+            if mid>=sizes[chm]:
+                sizes[chm]=mid+1000
+                self.data[chm]['+'].resize(sizes[chm],refcheck=0)
+                self.data[chm]['-'].resize(sizes[chm],refcheck=0)
+            if mid>=0:self.data[chm][stra][mid]+=1.0
         self.clearEmptyEnd()
-        for chr in self.data:
-            lth=max(self.data[chr]['+'].size,self.data[chr]['-'].size)
-            self.data[chr]['+'].resize(lth,refcheck=0)
-            self.data[chr]['-'].resize(lth,refcheck=0)
+        for chm in self.data:
+            lth=max(self.data[chm]['+'].size,self.data[chm]['-'].size)
+            self.data[chm]['+'].resize(lth,refcheck=0)
+            self.data[chm]['-'].resize(lth,refcheck=0)
         if cut>0:self.rvClonal(cut=cut)
         print('parsing finished,',num,'reads parsed')
     
@@ -287,17 +246,17 @@ class reads:
         for line in infile:
             try:
                 col=line[:-1].split('\t')
-                chr,start,name,score,stra=col[2],int(col[3]),col[0],0,col[1]
+                chm,start,name,score,stra=col[2],int(col[3]),col[0],0,col[1]
                 tnames=name.split()
                 if len(tnames)==2:name=tnames[0]+name[-1] ########## add by kaifu on sep 5, 2012 ########## some time the reads name have two words seperated by a space (not '\t')
                 end=start+len(col[4])
                 if len(end1)<1:
-                    end1=[chr,start,end,name,score,stra]#col
+                    end1=[chm,start,end,name,score,stra]#col
                     num+=1
                     if num%1000000==0: print(num,'reads parsed')
                     continue
                 else:
-                    end2=[chr,start,end,name,score,stra]#col
+                    end2=[chm,start,end,name,score,stra]#col
                     num+=1
                     if num%1000000==0: print(num,'reads parsed')
             except:
@@ -305,9 +264,13 @@ class reads:
                 continue
             if end1[3][:-1]==end2[3][:-1]:
                 if end1[5]=='+' and end2[5]=='-':
-                    chr,mid,fragsize=end1[0],functions.div((end1[1]+end2[2]),(2*step)),end2[2]-end1[1]
+                    chm = end1[0]
+                    mid = int(functions.div((end1[1]+end2[2]),(2*step)))
+                    fragsize = end2[2]-end1[1]
                 elif end1[5]=='-' and end2[5]=='+':
-                    chr,mid,fragsize=end1[0],functions.div((end1[2]+end2[1]),(2*step)),end2[1]-end1[2]
+                    chm = end1[0]
+                    mid = int(functions.div((end1[2]+end2[1]),(2*step)))
+                    fragsize = end2[1]-end1[2]
                 else:
                     print('pair error --- reads from same strand:\n',end1,'\n',end2,'\n')
                     serr+=1
@@ -322,22 +285,22 @@ class reads:
                 end2=[]
                 continue
              
-            if chr not in self.data:
-                self.data[chr]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
-                sizes[chr]=0
-            if mid>=sizes[chr]:
-                sizes[chr]=mid+1000
-                self.data[chr]['+'].resize(sizes[chr],refcheck=0)
-                self.data[chr]['-'].resize(sizes[chr],refcheck=0)
+            if chm not in self.data:
+                self.data[chm]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
+                sizes[chm]=0
+            if mid>=sizes[chm]:
+                sizes[chm]=mid+1000
+                self.data[chm]['+'].resize(sizes[chm],refcheck=0)
+                self.data[chm]['-'].resize(sizes[chm],refcheck=0)
             if mid>0:
-                self.data[chr]['+'][mid]+=1.0
-                self.data[chr]['-'][mid]+=1.0
+                self.data[chm]['+'][mid]+=1.0
+                self.data[chm]['-'][mid]+=1.0
             end1,end2=[],[]
         self.clearEmptyEnd()
-        for chr in self.data:
-            lth=max(self.data[chr]['+'].size,self.data[chr]['-'].size)
-            self.data[chr]['+'].resize(lth,refcheck=0)
-            self.data[chr]['-'].resize(lth,refcheck=0)
+        for chm in self.data:
+            lth=max(self.data[chm]['+'].size,self.data[chm]['-'].size)
+            self.data[chm]['+'].resize(lth,refcheck=0)
+            self.data[chm]['-'].resize(lth,refcheck=0)
         print('parsing finished,',num,'reads parsed')
         maxv,lths=max(fragsizes.values()),list(fragsizes.keys())
         lths.sort()
@@ -378,9 +341,9 @@ class reads:
         for line in infile:
             try:
                 col=line.split()
-                #if len(col)==5:chr,start,end,name,stra=col[0:5]
+                #if len(col)==5:chm,start,end,name,stra=col[0:5]
                 #else:
-                chr,start,end,name,score,stra=col[0:6]
+                chm,start,end,name,score,stra=col[0:6]
                 start,end=int(start),int(end)
             except:
                 print('wrong format:',line.split())#'wrong line:',line[:-1]
@@ -391,30 +354,30 @@ class reads:
             if loadcount>0:
                 if num>loadcount:
                     self.clearEmptyEnd()
-                    for chr in self.data:
-                        lth=max(self.data[chr]['+'].size,self.data[chr]['-'].size)
-                        self.data[chr]['+'].resize(lth,refcheck=0)
-                        self.data[chr]['-'].resize(lth,refcheck=0)
+                    for chm in self.data:
+                        lth=max(self.data[chm]['+'].size,self.data[chm]['-'].size)
+                        self.data[chm]['+'].resize(lth,refcheck=0)
+                        self.data[chm]['-'].resize(lth,refcheck=0)
                     if cut>0:self.rvClonal(cut=cut)
                     print 'parsing finished,',num-1,'reads parsed'
                     return
             '''
             if num%1000000==0: print(num,'reads parsed')
-            if stra=='+':mid=functions.div(start,step)
-            elif stra=='-':mid=functions.div(end,step)
-            if chr not in self.data:
-                self.data[chr]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
-                sizes[chr]=0
-            if mid>=sizes[chr]:
-                sizes[chr]=mid+1000
-                self.data[chr]['+'].resize(sizes[chr],refcheck=0)
-                self.data[chr]['-'].resize(sizes[chr],refcheck=0)
-            if mid>=0:self.data[chr][stra][mid]+=1.0
+            if stra=='+':mid=int(functions.div(start,step))
+            elif stra=='-':mid=int(functions.div(end,step))
+            if chm not in self.data:
+                self.data[chm]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
+                sizes[chm]=0
+            if mid>=sizes[chm]:
+                sizes[chm]=mid+1000
+                self.data[chm]['+'].resize(sizes[chm],refcheck=0)
+                self.data[chm]['-'].resize(sizes[chm],refcheck=0)
+            if mid>=0:self.data[chm][stra][mid]+=1.0
         self.clearEmptyEnd()
-        for chr in self.data:
-            lth=max(self.data[chr]['+'].size,self.data[chr]['-'].size)
-            self.data[chr]['+'].resize(lth,refcheck=0)
-            self.data[chr]['-'].resize(lth,refcheck=0)
+        for chm in self.data:
+            lth=max(self.data[chm]['+'].size,self.data[chm]['-'].size)
+            self.data[chm]['+'].resize(lth,refcheck=0)
+            self.data[chm]['-'].resize(lth,refcheck=0)
         if cut>0:self.rvClonal(cut=cut)
         print('parsing finished,',num,'reads parsed')
     def loadBedPaired(self,file="",step=10,cut=1e-10):
@@ -459,9 +422,9 @@ class reads:
                 continue
             if end1[3][:-1]==end2[3][:-1]:
                 if end1[5]=='+' and end2[5]=='-':
-                    chr,mid,fragsize=end1[0],functions.div((end1[1]+end2[2]),(2*step)),end2[2]-end1[1]
+                    chm,mid,fragsize=end1[0],int(functions.div((end1[1]+end2[2])),(2*step)),end2[2]-end1[1]
                 elif end1[5]=='-' and end2[5]=='+':
-                    chr,mid,fragsize=end1[0],functions.div((end1[2]+end2[1]),(2*step)),end2[1]-end1[2]
+                    chm,mid,fragsize=end1[0],int(functions.div((end1[2]+end2[1])),(2*step)),end2[1]-end1[2]
                 else:
                     #print 'pair error --- reads from same strand:\n',end1,'\n',end2,'\n'
                     serr+=1
@@ -476,22 +439,22 @@ class reads:
                 end2=[]
                 continue
              
-            if chr not in self.data:
-                self.data[chr]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
-                sizes[chr]=0
-            if mid>=sizes[chr]:
-                sizes[chr]=mid+1000
-                self.data[chr]['+'].resize(sizes[chr],refcheck=0)
-                self.data[chr]['-'].resize(sizes[chr],refcheck=0)
+            if chm not in self.data:
+                self.data[chm]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
+                sizes[chm]=0
+            if mid>=sizes[chm]:
+                sizes[chm]=mid+1000
+                self.data[chm]['+'].resize(sizes[chm],refcheck=0)
+                self.data[chm]['-'].resize(sizes[chm],refcheck=0)
             if mid>0:
-                self.data[chr]['+'][mid]+=1.0
-                self.data[chr]['-'][mid]+=1.0
+                self.data[chm]['+'][mid]+=1.0
+                self.data[chm]['-'][mid]+=1.0
             end1,end2=[],[]
         self.clearEmptyEnd()
-        for chr in self.data:
-            lth=max(self.data[chr]['+'].size,self.data[chr]['-'].size)
-            self.data[chr]['+'].resize(lth,refcheck=0)
-            self.data[chr]['-'].resize(lth,refcheck=0)
+        for chm in self.data:
+            lth=max(self.data[chm]['+'].size,self.data[chm]['-'].size)
+            self.data[chm]['+'].resize(lth,refcheck=0)
+            self.data[chm]['-'].resize(lth,refcheck=0)
         print('parsing finished,',num,'reads parsed')
         maxv,lths=max(fragsizes.values()),list(fragsizes.keys())
         lths.sort()
@@ -526,34 +489,38 @@ class reads:
         oldchr=""
         sizes={}
         num=0
-        infile=os.popen('samtools view  -S '+file)
-        for line in infile:
+        sam_reader = pysam.Samfile(file, "r")
+        for sam in sam_reader.fetch(until_eof=True):
             try:
-                col=line.split('\t')
-                if 'u' in samflag(col[1]):continue
-                name,chr,stra,start,rlen=col[0],col[2],'+',int(col[3]),len(col[9])
-                if 'r' in samflag(col[1]):stra='-'
+                #col=line.split('\t')
+                if sam.isunmapped:continue
+                name = sam.query_name
+                chm = sam.reference_name
+                stra = '+'
+                start=int(sam.reference_start + 1)
+                rlen=sam.reference_length
+                if sam.is_reverse:stra='-'
                 end,score=start+rlen,'1'
             except:
-                print(line.split())#'wrong line:',line[:-1]
+                print(sam)#'wrong line:',line[:-1]
                 continue
             num+=1
             if num%1000000==0: print(num,'reads parsed')
-            if stra=='+':mid=functions.div(start,step)
-            elif stra=='-':mid=functions.div(end,step)
-            if chr not in self.data:
-                self.data[chr]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
-                sizes[chr]=0
-            if mid>=sizes[chr]:
-                sizes[chr]=mid+1000
-                self.data[chr]['+'].resize(sizes[chr],refcheck=0)
-                self.data[chr]['-'].resize(sizes[chr],refcheck=0)
-            if mid>=0:self.data[chr][stra][mid]+=1.0
+            if stra=='+':mid=int(functions.div(start,step))
+            elif stra=='-':mid=int(functions.div(end,step))
+            if chm not in self.data:
+                self.data[chm]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
+                sizes[chm]=0
+            if mid>=sizes[chm]:
+                sizes[chm]=mid+1000
+                self.data[chm]['+'].resize(sizes[chm],refcheck=0)
+                self.data[chm]['-'].resize(sizes[chm],refcheck=0)
+            if mid>=0:self.data[chm][stra][mid]+=1.0
         self.clearEmptyEnd()
-        for chr in self.data:
-            lth=max(self.data[chr]['+'].size,self.data[chr]['-'].size)
-            self.data[chr]['+'].resize(lth,refcheck=0)
-            self.data[chr]['-'].resize(lth,refcheck=0)
+        for chm in self.data:
+            lth=max(self.data[chm]['+'].size,self.data[chm]['-'].size)
+            self.data[chm]['+'].resize(lth,refcheck=0)
+            self.data[chm]['-'].resize(lth,refcheck=0)
         if cut>0:self.rvClonal(cut=cut)
         print('parsing finished,',num,'reads parsed')
     def loadSamPaired(self,file="",step=10,cut=1e-10):
@@ -572,38 +539,42 @@ class reads:
         sizes={}
         fragsizes={}
         num=0
-        infile=os.popen('samtools view -S '+file)
         print('\nparsing from sam file',file,'...')
-        for line in infile:
+        sam_reader = pysam.Samfile(file, "r")
+        for sam in sam_reader.fetch(until_eof=True):
             try:
-                col=line.split('\t')
-                if not 'P' in samflag(col[1]):continue
-                col[3],col[7],col[9]=int(col[3]),int(col[7]),len(col[9])
-                name,chr,stra,score=col[0],col[2],'+','1'
-                mid=np.floor(functions.div((col[3]+col[7]+col[9]),(2*step)))
-                if 'r' in samflag(col[1]):stra='-'
-                if col[7]>col[3]:fragsize=col[7]-col[3]+col[9]
-                else:fragsize=col[3]-col[7]+col[9]
+                if sam.is_proper_pair:continue
+                ref_start=int(sam.reference_start + 1)
+                next_ref_start=int(sam.next_reference_start + 1)
+                rlen=sam.reference_length
+                name = sam.query_name
+                chm = sam.reference_name
+                stra = '+'
+                score = '1'
+                mid=int(np.floor(functions.div((ref_start+next_ref_start+rlen),(2*step))))
+                if sam.is_reverse:stra='-'
+                if next_ref_start>ref_start:fragsize=next_ref_start-ref_start+rlen
+                else:fragsize=ref_start-next_ref_start+rlen
                 if fragsize not in fragsizes:fragsizes[fragsize]=1
                 else:fragsizes[fragsize]+=1
             except:
-                print(line.split())#'wrong line:',line[:-1]
+                print(sam)#'wrong line:',line[:-1]
                 continue
             num+=1
             if num%1000000==0: print(num,'reads parsed')
-            if chr not in self.data:
-                self.data[chr]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
-                sizes[chr]=0
-            if mid>=sizes[chr]:
-                sizes[chr]=mid+1000
-                self.data[chr]['+'].resize(sizes[chr],refcheck=0)
-                self.data[chr]['-'].resize(sizes[chr],refcheck=0)
-            if mid>=0:self.data[chr][stra][mid]+=1.0
+            if chm not in self.data:
+                self.data[chm]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
+                sizes[chm]=0
+            if mid>=sizes[chm]:
+                sizes[chm]=mid+1000
+                self.data[chm]['+'].resize(sizes[chm],refcheck=0)
+                self.data[chm]['-'].resize(sizes[chm],refcheck=0)
+            if mid>=0:self.data[chm][stra][mid]+=1.0
         self.clearEmptyEnd()
-        for chr in self.data:
-            lth=max(self.data[chr]['+'].size,self.data[chr]['-'].size)
-            self.data[chr]['+'].resize(lth,refcheck=0)
-            self.data[chr]['-'].resize(lth,refcheck=0)
+        for chm in self.data:
+            lth=max(self.data[chm]['+'].size,self.data[chm]['-'].size)
+            self.data[chm]['+'].resize(lth,refcheck=0)
+            self.data[chm]['-'].resize(lth,refcheck=0)
         if cut>0:self.rvClonal(cut=cut)
         print('parsing finished,',num,'reads parsed')
         maxv,lths=max(fragsizes.values()),list(fragsizes.keys())
@@ -636,38 +607,39 @@ class reads:
         oldchr=""
         sizes={}
         num=0
-        infile=os.popen('samtools view  '+file)
-        for line in infile:
+        sam_reader = pysam.Samfile(file, "rb")
+        for sam in sam_reader.fetch(until_eof=True):
             try:
-                col=line.split('\t')
                 # skip unmapped reads
-                print(samflag(col[1]))
-                sys.exit()
-                if 'u' in samflag(col[1]):continue
-                name,chr,stra,start,rlen=col[0],col[2],'+',int(col[3]),len(col[9])
+                if sam.isunmapped:continue
+                name = sam.query_name
+                chm = sam.reference_name
+                stra = '+'
+                start=int(sam.reference_start + 1)
+                rlen=sam.reference_length
                 # set `stra` to "-" for reverse reads
-                if 'r' in samflag(col[1]):stra='-'
+                if sam.is_reverse:stra='-'
                 end,score=start+rlen,'1'
             except:
-                print(line.split())#'wrong line:',line[:-1]
+                print(sam)#'wrong line:',line[:-1]
                 continue
             num+=1
             if num%1000000==0: print(num,'reads parsed')
-            if stra=='+':mid=functions.div(start,step)
-            elif stra=='-':mid=functions.div(end,step)
-            if chr not in self.data:
-                self.data[chr]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
-                sizes[chr]=0
-            if mid>=sizes[chr]:
-                sizes[chr]=mid+1000
-                self.data[chr]['+'].resize(sizes[chr],refcheck=0)
-                self.data[chr]['-'].resize(sizes[chr],refcheck=0)
-            if mid>=0:self.data[chr][stra][mid]+=1.0
+            if stra=='+':mid=int(functions.div(start,step))
+            elif stra=='-':mid=int(functions.div(end,step))
+            if chm not in self.data:
+                self.data[chm]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
+                sizes[chm]=0
+            if mid>=sizes[chm]:
+                sizes[chm]=mid+1000
+                self.data[chm]['+'].resize(sizes[chm],refcheck=0)
+                self.data[chm]['-'].resize(sizes[chm],refcheck=0)
+            if mid>=0:self.data[chm][stra][mid]+=1.0
         self.clearEmptyEnd()
-        for chr in self.data:
-            lth=max(self.data[chr]['+'].size,self.data[chr]['-'].size)
-            self.data[chr]['+'].resize(lth,refcheck=0)
-            self.data[chr]['-'].resize(lth,refcheck=0)
+        for chm in self.data:
+            lth=max(self.data[chm]['+'].size,self.data[chm]['-'].size)
+            self.data[chm]['+'].resize(lth,refcheck=0)
+            self.data[chm]['-'].resize(lth,refcheck=0)
         if cut>0:self.rvClonal(cut=cut)
         print('parsing finished,',num,'reads parsed')
     def loadBamPaired(self,file="",step=10,cut=1e-10):
@@ -688,38 +660,42 @@ class reads:
         sizes={}
         fragsizes={}
         num=0
-        infile=os.popen('samtools view   '+file)
-        for line in infile:
+        sam_reader = pysam.Samfile(file, "rb")
+        for sam in sam_reader.fetch(until_eof=True):
             try:
-                col=line.split('\t')
-                if not 'P' in samflag(col[1]):continue
-                col[3],col[7],col[9]=int(col[3]),int(col[7]),len(col[9])
-                name,chr,stra,score=col[0],col[2],'+','1'
-                mid=np.floor(functions.div((col[3]+col[7]+col[9]),(2*step)))
-                if 'r' in samflag(col[1]):stra='-'
-                if col[7]>col[3]:fragsize=col[7]-col[3]+col[9]
-                else:fragsize=col[3]-col[7]+col[9]
+                if sam.is_proper_pair:continue
+                ref_start=int(sam.reference_start + 1)
+                next_ref_start=int(sam.next_reference_start + 1)
+                rlen=sam.reference_length
+                name = sam.query_name
+                chm = sam.reference_name
+                stra = '+'
+                score = '1'
+                mid=int(functions.div((ref_start+next_ref_start+rlen),(2*step)))
+                if sam.is_reverse:stra='-'
+                if next_ref_start>ref_start:fragsize=next_ref_start-ref_start+rlen
+                else:fragsize=ref_start-next_ref_start+rlen
                 if fragsize not in fragsizes:fragsizes[fragsize]=1
                 else:fragsizes[fragsize]+=1
             except:
-                print(line.split())#'wrong line:',line[:-1]
-                sys.exit()
+                print(sam)#'wrong line:',line[:-1]
+                sys.exit("SOME REASON DID NOT WORK...")
                 continue
             num+=1
             if num%1000000==0: print(num,'reads parsed')
-            if chr not in self.data:
-                self.data[chr]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
-                sizes[chr]=0
-            if mid>=sizes[chr]:
-                sizes[chr]=mid+1000
-                self.data[chr]['+'].resize(sizes[chr],refcheck=0)
-                self.data[chr]['-'].resize(sizes[chr],refcheck=0)
-            if mid>=0:self.data[chr][stra][mid]+=1.0
+            if chm not in self.data:
+                self.data[chm]={'+':numpy.array([0.0]),'-':numpy.array([0.0])}
+                sizes[chm]=0
+            if mid>=sizes[chm]:
+                sizes[chm]=mid+1000
+                self.data[chm]['+'].resize(sizes[chm],refcheck=0)
+                self.data[chm]['-'].resize(sizes[chm],refcheck=0)
+            if mid>=0:self.data[chm][stra][mid]+=1.0
         self.clearEmptyEnd()
-        for chr in self.data:
-            lth=max(self.data[chr]['+'].size,self.data[chr]['-'].size)
-            self.data[chr]['+'].resize(lth,refcheck=0)
-            self.data[chr]['-'].resize(lth,refcheck=0)
+        for chm in self.data:
+            lth=max(self.data[chm]['+'].size,self.data[chm]['-'].size)
+            self.data[chm]['+'].resize(lth,refcheck=0)
+            self.data[chm]['-'].resize(lth,refcheck=0)
         if float(cut)>0:self.rvClonal(cut=cut)
         print('parsing finished,',num,'reads parsed')
         maxv,lths=max(fragsizes.values()),list(fragsizes.keys())
@@ -730,7 +706,7 @@ class reads:
             if fragsizes[lth]==maxv:maxlth.append(lth)
             tlth+=lth*fragsizes[lth]
             count+=fragsizes[lth]
-            dcount=np.ceil(functions.div(100*fragsizes[lth],maxv))
+            dcount=int(np.ceil(functions.div(100*fragsizes[lth],maxv)))
             if dcount>4: print('-'*dcount,lth,fragsizes[lth])
         print('average fragment size:',functions.div(tlth*1.0,count))
         print('most enriched fragment size:',maxlth)
@@ -746,7 +722,7 @@ class reads:
         Value:
             None
         '''
-
+        
         return functions.div(self.sum()*1.0,self.size())
 
     def rvClonal(self,cut=1e-10):
@@ -780,12 +756,12 @@ class reads:
         tchrv=numpy.array([0.0])
         before=self.sum()
         print('before removing:',before,'reads')
-        for chr in self.data:
-            for stra in list(self.data[chr].keys()):
-                tchrv=deepcopy(self.data[chr][stra])
+        for chm in self.data:
+            for stra in list(self.data[chm].keys()):
+                tchrv=deepcopy(self.data[chm][stra])
                 tchrv-=cut#all positive values are count of clonal reads
                 tchrv=functions.div(((tchrv**2)**0.5+tchrv),2)#remove all neative values
-                self.data[chr][stra]-=tchrv
+                self.data[chm][stra]-=tchrv
         after=self.sum()
         print('after removing:',after,'reads')
         print(functions.div((before-after)*100,before),'percent removed.')
@@ -803,9 +779,9 @@ class reads:
             Interger value representing genome size.
         '''
         lth=0
-        for chr in self.data:
-            for stra in self.data[chr]:
-                lth+=self.data[chr][stra].size
+        for chm in self.data:
+            for stra in self.data[chm]:
+                lth+=self.data[chm][stra].size
         return lth*self.step ##### '*self.step' is added by Kaifu on Aug 1st,2012 #####
     def sizeAdjust(self,gfile):
         '''
@@ -822,10 +798,10 @@ class reads:
         for line in open(gfile):
             col=line.split()
             sizes[col[0]]=functions.div(int(col[1]),self.step)
-        for chr in self.data:
-            if chr not in sizes:self.data.pop(chr)
-            for str in self.data[chr]:
-                self.data[chr][str].resize(sizes[chr],refcheck=0)
+        for chm in self.data:
+            if chm not in sizes:self.data.pop(chm)
+            for str in self.data[chm]:
+                self.data[chm][str].resize(sizes[chm],refcheck=0)
     
     def sum(self):
         '''
@@ -839,9 +815,9 @@ class reads:
             an interger value representing the reads count.
         '''
         v=0
-        for chr in self.data:
-            for stra in self.data[chr]:
-                v+=self.data[chr][stra].sum()
+        for chm in self.data:
+            for stra in self.data[chm]:
+                v+=self.data[chm][stra].sum()
         return v
 
     def toWig(self,fs=None,extend=0,mifrsz=10,mafrsz=300):
@@ -865,17 +841,17 @@ class reads:
         fragsize,extend=functions.div(fs,(2*step)),functions.div(extend,(2*step))
         wg=Wig(step=step)
         print('generating wig ...')
-        for chr in self.data:
+        for chm in self.data:
             tmax=max(1000,fragsize*4,extend*4)
-            if self.data[chr]['+'].size<tmax:self.data[chr]['+'].resize(tmax,refcheck=0)
-            if self.data[chr]['-'].size<tmax:self.data[chr]['-'].resize(tmax,refcheck=0)
-            wg.addChr(chr)
-            lth=int(self.data[chr]['+'].size)
-            wg.resizeChr(chr,lth*step)
-            self.data[chr]['+'][fragsize:lth]=self.data[chr]['+'][0:(lth-fragsize)]
-            for i in range(fragsize):self.data[chr]['+'][i]=0
-            self.data[chr]['+'][0:(lth-fragsize)]+=self.data[chr]['-'][fragsize:lth]
-            for p in range(-extend,extend+1):wg.data[chr][extend:(lth-extend)]+=self.data[chr]['+'][(extend+p):(lth-extend+p)]
+            if self.data[chm]['+'].size<tmax:self.data[chm]['+'].resize(tmax,refcheck=0)
+            if self.data[chm]['-'].size<tmax:self.data[chm]['-'].resize(tmax,refcheck=0)
+            wg.addChr(chm)
+            lth=int(self.data[chm]['+'].size)
+            wg.resizeChr(chm,lth*step)
+            self.data[chm]['+'][fragsize:lth]=self.data[chm]['+'][0:(lth-fragsize)]
+            for i in range(fragsize):self.data[chm]['+'][i]=0
+            self.data[chm]['+'][0:(lth-fragsize)]+=self.data[chm]['-'][fragsize:lth]
+            for p in range(-extend,extend+1):wg.data[chm][extend:(lth-extend)]+=self.data[chm]['+'][(extend+p):(lth-extend+p)]
         wg.foldChange(functions.div(old_extend*1.0,wg.step)) ##### added by Kaifu on May29, 2014
         return wg
     def foldSampling(self,fold=1.0):
@@ -892,23 +868,23 @@ class reads:
         if fold>1:fold=fold-1
         wig=self
         tarray=numpy.array([0.0])
-        for chr in wig.data:
-            for str in wig.data[chr]:
-                print(chr)
-                tarray.resize(int(wig.data[chr][str].sum()),refcheck=0)
-                tarray,csz,i,tsz=tarray*0,wig.data[chr][str].size,0,0
+        for chm in wig.data:
+            for str in wig.data[chm]:
+                print(chm)
+                tarray.resize(int(wig.data[chm][str].sum()),refcheck=0)
+                tarray,csz,i,tsz=tarray*0,wig.data[chm][str].size,0,0
                 while i<csz:
-                    newtsz=int(tsz+wig.data[chr][str][i])
+                    newtsz=int(tsz+wig.data[chm][str][i])
                     if newtsz>=tarray.size:tarray.resize(newtsz+1000,refcheck=0)
                     while tsz<newtsz:
                         tarray[tsz]=i
                         tsz+=1
                     i+=1
-                i,tnum,tsz=0,int(wig.data[chr][str].sum()*fold),tsz
-                if fold<=1:wig.data[chr][str]*=0
+                i,tnum,tsz=0,int(wig.data[chm][str].sum()*fold),tsz
+                if fold<=1:wig.data[chm][str]*=0
                 while i<tnum:
                     i+=1
-                    wig.data[chr][str][tarray[randint(0,tsz-1)]]+=1
+                    wig.data[chm][str][tarray[randint(0,tsz-1)]]+=1
 
 
 if __name__ == "__main__":
