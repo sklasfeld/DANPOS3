@@ -15,7 +15,23 @@ https://sites.google.com/site/danposdoc/ where this code originated from.
 
 This code was written to update umap to work with Python3 and fix other bugs.
 
-Version Control
+## Installation
+To download the repository
+```
+git clone https://github.com/sklasfeld/DANPOS3.git
+```
+
+To install the exact versions of the dependencies use type:
+```
+cd DANPOS3
+pip install -r requirements.txt
+``
+
+[To be able to execute these scripts from other directories 
+easily, please set your current working directory to your
+$PATH variable.](https://opensource.com/article/17/6/set-path-linux)
+
+### Package and Library versions
 * Python 3.7.6
 * R version 4.0.1
 * samtools 1.7 using htslib 1.7
@@ -24,3 +40,5 @@ Version Control
   * argparse 1.1
   * numpy 1.18.5
   * pysam 0.16.0.1
+
+To test your environment for these packages, use the script `print_versions.py`

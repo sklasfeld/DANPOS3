@@ -1,0 +1,5 @@
+### python libary requirements ###
+rpy2 == 3.3.3
+argparse == 1.1
+numpy == 1.18.5
+pysam == 0.16.0.1
