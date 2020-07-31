@@ -25,7 +25,7 @@ To install the exact versions of the dependencies use type:
 ```
 cd DANPOS3
 pip install -r requirements.txt
-``
+```
 
 [To be able to execute these scripts from other directories 
 easily, please set your current working directory to your
