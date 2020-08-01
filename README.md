@@ -41,4 +41,7 @@ $PATH variable.](https://opensource.com/article/17/6/set-path-linux)
   * numpy 1.18.5
   * pysam 0.16.0.1
 
-To test your environment for these packages, use the script `print_versions.py`
+To test your environment for these packages, use the command:
+```
+python scripts/print_versions.py
+```
