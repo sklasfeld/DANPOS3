@@ -1,4 +1,0 @@
-argparse
-numpy
-pysam
-rpy2
