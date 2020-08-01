@@ -17,3 +17,13 @@ danpos/summits.py
 danpos/wig.py
 danpos/wigs.py
 danpos/wiq.py
+danpos/__pycache__/__init__.cpython-36.pyc
+danpos/__pycache__/__main__.cpython-36.pyc
+danpos/__pycache__/functions.cpython-36.pyc
+danpos/__pycache__/lib.cpython-36.pyc
+danpos/__pycache__/reads.cpython-36.pyc
+danpos/__pycache__/summits.cpython-36.pyc
+danpos/__pycache__/wig.cpython-36.pyc
+danpos/__pycache__/wigs.cpython-36.pyc
+danpos/__pycache__/wiq.cpython-36.pyc
+scripts/print_versions.py
