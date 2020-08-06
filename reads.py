@@ -489,8 +489,8 @@ class reads:
         oldchr=""
         sizes={}
         num=0
-        sam_reader = pysam.Samfile(file, "r")
-        for sam in sam_reader.fetch(until_eof=True):
+        sam_reader = pysam.AlignmentFile(file, "r")
+        for sam in sam_reader.fetch():
             try:
                 #col=line.split('\t')
                 if sam.isunmapped:continue
@@ -516,6 +516,7 @@ class reads:
                 self.data[chm]['+'].resize(sizes[chm],refcheck=0)
                 self.data[chm]['-'].resize(sizes[chm],refcheck=0)
             if mid>=0:self.data[chm][stra][mid]+=1.0
+        if num==0: sys.exit("ERROR: Empty Sam File")
         self.clearEmptyEnd()
         for chm in self.data:
             lth=max(self.data[chm]['+'].size,self.data[chm]['-'].size)
@@ -540,10 +541,10 @@ class reads:
         fragsizes={}
         num=0
         print('\nparsing from sam file',file,'...')
-        sam_reader = pysam.Samfile(file, "r")
-        for sam in sam_reader.fetch(until_eof=True):
+        sam_reader = pysam.AlignmentFile(file, "r")
+        for sam in sam_reader.fetch():
             try:
-                if sam.is_proper_pair:continue
+                if not sam.is_proper_pair:continue
                 ref_start=int(sam.reference_start + 1)
                 next_ref_start=int(sam.next_reference_start + 1)
                 rlen=sam.reference_length
@@ -570,6 +571,7 @@ class reads:
                 self.data[chm]['+'].resize(sizes[chm],refcheck=0)
                 self.data[chm]['-'].resize(sizes[chm],refcheck=0)
             if mid>=0:self.data[chm][stra][mid]+=1.0
+        if num==0: sys.exit("ERROR: Empty Sam File")
         self.clearEmptyEnd()
         for chm in self.data:
             lth=max(self.data[chm]['+'].size,self.data[chm]['-'].size)
@@ -607,8 +609,8 @@ class reads:
         oldchr=""
         sizes={}
         num=0
-        sam_reader = pysam.Samfile(file, "rb")
-        for sam in sam_reader.fetch(until_eof=True):
+        sam_reader = pysam.AlignmentFile(file, "rb")
+        for sam in sam_reader.fetch():
             try:
                 # skip unmapped reads
                 if sam.isunmapped:continue
@@ -635,6 +637,7 @@ class reads:
                 self.data[chm]['+'].resize(sizes[chm],refcheck=0)
                 self.data[chm]['-'].resize(sizes[chm],refcheck=0)
             if mid>=0:self.data[chm][stra][mid]+=1.0
+        if num==0: sys.exit("ERROR: Empty Bam File")
         self.clearEmptyEnd()
         for chm in self.data:
             lth=max(self.data[chm]['+'].size,self.data[chm]['-'].size)
@@ -660,10 +663,10 @@ class reads:
         sizes={}
         fragsizes={}
         num=0
-        sam_reader = pysam.Samfile(file, "rb")
-        for sam in sam_reader.fetch(until_eof=True):
+        sam_reader = pysam.AlignmentFile(file, "rb")
+        for sam in sam_reader.fetch():
             try:
-                if sam.is_proper_pair:continue
+                if not sam.is_proper_pair:continue
                 ref_start=int(sam.reference_start + 1)
                 next_ref_start=int(sam.next_reference_start + 1)
                 rlen=sam.reference_length
@@ -691,6 +694,7 @@ class reads:
                 self.data[chm]['+'].resize(sizes[chm],refcheck=0)
                 self.data[chm]['-'].resize(sizes[chm],refcheck=0)
             if mid>=0:self.data[chm][stra][mid]+=1.0
+        if num==0: sys.exit("ERROR: Empty Bam File")
         self.clearEmptyEnd()
         for chm in self.data:
             lth=max(self.data[chm]['+'].size,self.data[chm]['-'].size)
