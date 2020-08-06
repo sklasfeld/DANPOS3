@@ -151,7 +151,7 @@ class Summits:
                     elif vs[-2]==vs[-1]:
                         ###### added by Kaifu Chen Jul 10,2012 ######
                         nps[ni]=div((ps[-2]+ps[-1]),2)
-                        nvs[ni]=wg.data[cr][div(div((ps[-2]+ps[-1]),2),wg.step)] 
+                        nvs[ni]=wg.data[cr][int(div(div((ps[-2]+ps[-1]),2),wg.step))] 
                     else:nps[ni],nvs[ni]=ps[-1],vs[-1]
                     ni+=1
                     merge+=1
@@ -193,10 +193,10 @@ class Summits:
                 if gs>midis and gs<madis:
                     p=int(div((ps[i+1]+ps[i])*0.5,step))
                     #print gs, wg.data[cr][p],wg.data[cr][ps[i]/step],wg.data[cr][ps[i+1]/step]
-                    if wg.data[cr][p]>=height:
+                    if wg.data[cr][int(p)]>=height:
                         id.append(i+1)
                         np.append(p*step)
-                        nv.append(wg.data[cr][p])
+                        nv.append(wg.data[cr][int(p)])
                 i+=1
             alth=len(id)#total count of insert smts
             print(alth)
