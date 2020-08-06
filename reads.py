@@ -422,9 +422,9 @@ class reads:
                 continue
             if end1[3][:-1]==end2[3][:-1]:
                 if end1[5]=='+' and end2[5]=='-':
-                    chm,mid,fragsize=end1[0],int(functions.div((end1[1]+end2[2])),(2*step)),end2[2]-end1[1]
+                    chm,mid,fragsize=end1[0],int(functions.div((end1[1]+end2[2]),(2*step))),end2[2]-end1[1]
                 elif end1[5]=='-' and end2[5]=='+':
-                    chm,mid,fragsize=end1[0],int(functions.div((end1[2]+end2[1])),(2*step)),end2[1]-end1[2]
+                    chm,mid,fragsize=end1[0],int(functions.div((end1[2]+end2[1]),(2*step))),end2[1]-end1[2]
                 else:
                     #print 'pair error --- reads from same strand:\n',end1,'\n',end2,'\n'
                     serr+=1
