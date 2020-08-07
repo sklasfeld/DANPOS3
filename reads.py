@@ -311,7 +311,7 @@ class reads:
             tlth+=lth*fragsizes[lth]
             count+=fragsizes[lth]
             dcount=np.ceil(functions.div(100*fragsizes[lth],maxv))
-            if dcount>4: print('-'*dcount,lth,fragsizes[lth])
+            if dcount>4: print('-'*int(dcount),lth,fragsizes[lth])
         print('average fragment size:',functions.div(tlth*1.0,count))
         print('most enriched fragment size:',maxlth)
         print(serr,'pairs failed due to locations on same strands')
@@ -383,7 +383,11 @@ class reads:
     def loadBedPaired(self,file="",step=10,cut=1e-10):
         '''
         Description:
-            load paired-end reads data from a file in '.bed' format, the "name" fields of each reads pair must be the same except for the last one character in each field, which should be either '1' or '2', e.g. 'reads/1' or 'reads/2', each pair of reads must be arranged in two neighboring lines.
+            load paired-end reads data from a file in '.bed' format, the "name" 
+            fields of each reads pair must be the same except for the last one 
+            character in each field, which should be either '1' or '2', e.g. 
+            'reads/1' or 'reads/2', each pair of reads must be arranged in two 
+            neighboring lines.
         
         parameter:
             file: a path to the file containing the sequencing reads
@@ -465,7 +469,8 @@ class reads:
             tlth+=lth*fragsizes[lth]
             count+=fragsizes[lth]
             dcount=np.ceil(functions.div(100*fragsizes[lth],maxv))
-            if dcount>4: print('-'*dcount,lth,fragsizes[lth])
+            print(dcount)
+            if dcount>4: print('-'*int(dcount),lth,fragsizes[lth])
         print('average fragment size:',functions.div(tlth*1.0,count))
         print('most enriched fragment size:',maxlth)
         print(serr,'pairs failed due to locations on same strands')
@@ -588,7 +593,7 @@ class reads:
             tlth+=lth*fragsizes[lth]
             count+=fragsizes[lth]
             dcount=np.ceil(functions.div(100*fragsizes[lth],maxv))
-            if dcount>4: print('-'*dcount,lth,fragsizes[lth])
+            if dcount>4: print('-'*int(dcount),lth,fragsizes[lth])
         print('average fragment size:',functions.div(tlth*1.0,count))
         print('most enriched fragment size:',maxlth)
 
@@ -711,7 +716,7 @@ class reads:
             tlth+=lth*fragsizes[lth]
             count+=fragsizes[lth]
             dcount=int(np.ceil(functions.div(100*fragsizes[lth],maxv)))
-            if dcount>4: print('-'*dcount,lth,fragsizes[lth])
+            if dcount>4: print('-'*int(dcount),lth,fragsizes[lth])
         print('average fragment size:',functions.div(tlth*1.0,count))
         print('most enriched fragment size:',maxlth)
 
