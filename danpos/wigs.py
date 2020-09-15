@@ -132,7 +132,7 @@ class Wigs:
             rg=Wig(region_file)
         for name in names:sampling_total[name]=self.data[name].multiply(rg).sum()
         sys.stdout.write(str(rg.sum()) + ' (' + str(functions.div(rg.sum()*100.0,rg.gsize())) + 
-            ' %) of ' + rg.gsize() + ' base pairs calculated:\n')
+            ' %) of ' + str(rg.gsize()) + ' base pairs calculated:\n')
         for name in names:
             sys.stdout.write(name + str(sampling_total[name]) + ' (' + 
                 str(functions.div(sampling_total[name]*100.0,self.data[name].sum())) + '% of total)\n')
