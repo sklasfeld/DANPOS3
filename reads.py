@@ -754,7 +754,7 @@ class reads:
         if  cut>0 and cut<1:
             ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE))}''')
             lgpcut=0-functions.div(log(cut),log(10))
-            cut=avg+0.5
+            cut=float(avg+0.5)
             while(0-(functions.div(float(str(ppois(cut,float(avg))).split()[-1]),log(10)))<lgpcut):cut+=1
             if cut<1:cut=1
         print('whole genome average reads density is',avg,'use cutoff:',cut)
