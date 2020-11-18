@@ -1325,7 +1325,7 @@ def log10fuztest(pc,pt,cr,cwig,twig=None,rd=None):
             print(unnumpy(c))
             print(unnumpy(bc))
             p=pf(unnumpy(div(v,bvc)),
-                unnumpy(c),unnumpy(bc))
+                unnumpy(c),unnumpy(bc), log_bool=True)
             return[p,sqrt(v)]
     else:
         if cr not in twig.data:return(fuztest(pc=pc,pt=pt,cr=cr,cwig=cwig,twig=None,rd=rd))
@@ -1338,9 +1338,9 @@ def log10fuztest(pc,pt,cr,cwig,twig=None,rd=None):
         if pt<rd: return [0,sqrt(bvc),sqrt(bvc)]
         vc,cc,=var(p=pc,cr=cr,wig=cwig,step=step,rd=rd,bv=bv,bc=bc)
         vt,ct=var(p=pt,cr=cr,wig=twig,step=step,rd=rd,bv=bv,bc=bc)
-        if vc<vt:p=pf(unnumpy(div(vc,vt)),unnumpy(cc),unnumpy(ct))
+        if vc<vt:p=pf(unnumpy(div(vc,vt)),unnumpy(cc),unnumpy(ct), log_bool=True)
         else:p=pf(unnumpy(div(vt,vc)),
-            unnumpy(ct),unnumpy(cc))
+            unnumpy(ct),unnumpy(cc), log_bool=True)
         return[p,sqrt(vc),sqrt(vt)]
 
 def var(p,cr,wig,step,rd,bv,bc):
