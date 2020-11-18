@@ -10,6 +10,8 @@ from random import randint
 from math import log10,log,sqrt
 from rpy2.robjects import r, FloatVector
 import re,sys
+# to replace having to use R in python
+from scipy.stats import poisson,f
 
 # python2 divides ints differently
 # than python3. Since this code was 
@@ -35,6 +37,36 @@ def unnumpy(foo):
         foo = foo.item()
     return(foo)
 
+# equivalent of ppois function in R
+# q - vector of quantiles
+# mean - (AKA lambda) vector of (non-negative) means
+# lower_tail - logical; if TRUE probabilities are 
+#   P[x<=x], otherwise P[X>x]
+# log_bool - if TRUE, probabilies p are given as log(p)
+def ppois(q, mean, lower_tail=True, log_bool = False):
+    answer=poisson.cdf(q,mean)
+    if not lower_tail:
+        answer=1-answer
+    if log_bool:
+        answer = log(answer)
+    return(answer)
+
+
+# equivalent of pf function in R
+# q - vector of quantiles
+# df1, df2 - degrees of freedom
+# lower_tail - logical; if TRUE probabilities are 
+#   P[x<=x], otherwise P[X>x]
+# log_bool - if true probabilities p are given as log(p)
+def pf(q,df1, df2, lower_tail=True, log_bool=False):
+    answer = f.cdf(q, dfn=df1,dfd=df2)
+    if not lower_tail:
+        answer=1-answer
+    if log_bool:
+        answer = log(answer)
+    return(answer)
+
+
 def danpos(tpath=None,tbg=None,opath='./',\
            nonzero=False,amount=None,nor='Q',region_file=None,test="P",save=True,fdr=0,\
            pheight=1e-5,height=5,logp=5,\
@@ -55,7 +87,11 @@ def danpos(tpath=None,tbg=None,opath='./',\
     ###### step 1 start --- parameter checking and proccessing--- ######
     starttime=time()
     rd,hdiff=distance,1-ratio#int(distance*1.6/(2*step))*step
-    fcut=float(str(r.sd(FloatVector(list(range(0-rd,rd+step,step))))).split()[-1])*(0.95-div(step,(2.0*rd)))
+    
+    # line below modified because rpy is not as efficient
+    #fcut=float(str(r.sd(FloatVector(list(range(0-rd,rd+step,step))))).split()[-1])*(0.95-div(step,(2.0*rd)))
+    fcut=float(str(numpy.std(list(range(0-rd,rd+step,step)))).split()[-1]) * (0.95-div(step,(2.0*rd)))
+
     print('rd',rd,', step',step,' fcut,',fcut)
     
     pairs,groups=pathParser(tpath=tpath)
@@ -1271,7 +1307,8 @@ def fuzFDR(cwig,twig,simu=10000,rd=None,regions=None):
 
 def log10fuztest(pc,pt,cr,cwig,twig=None,rd=None):
     #ftest=r('''function(x,y){return(var.test(x,y)$p.value)}''')
-    pf=r('''function(s,df1,df2){return(pf(s, df1, df2,log.p = TRUE)/log(10))}''')
+    # removed this line below since rpy is not efficient
+    #pf=r('''function(s,df1,df2){return(pf(s, df1, df2,log.p = TRUE)/log(10))}''')
     step=cwig.step
     bv,bc=0,div(rd*2,step)
     for d in range(-rd,rd+step,step):bv+=d*d
@@ -1283,8 +1320,12 @@ def log10fuztest(pc,pt,cr,cwig,twig=None,rd=None):
         v,c=var(p=pc,cr=cr,wig=cwig,step=step,rd=rd,bv=bv,bc=bc)
         if v>=bvc:return [0,sqrt(v)]
         else:
-            p=float(str(pf(unnumpy(div(v,bvc)),
-                unnumpy(c),unnumpy(bc))).split()[-1])
+            print("pf test parameters")
+            print(unnumpy(div(v,bvc)))
+            print(unnumpy(c))
+            print(unnumpy(bc))
+            p=pf(unnumpy(div(v,bvc)),
+                unnumpy(c),unnumpy(bc))
             return[p,sqrt(v)]
     else:
         if cr not in twig.data:return(fuztest(pc=pc,pt=pt,cr=cr,cwig=cwig,twig=None,rd=rd))
@@ -1297,9 +1338,9 @@ def log10fuztest(pc,pt,cr,cwig,twig=None,rd=None):
         if pt<rd: return [0,sqrt(bvc),sqrt(bvc)]
         vc,cc,=var(p=pc,cr=cr,wig=cwig,step=step,rd=rd,bv=bv,bc=bc)
         vt,ct=var(p=pt,cr=cr,wig=twig,step=step,rd=rd,bv=bv,bc=bc)
-        if vc<vt:p=float(str(pf(unnumpy(div(vc,vt)),unnumpy(cc),unnumpy(ct))).split()[-1])
-        else:p=float(str(pf(unnumpy(div(vt,vc)),
-            unnumpy(ct),unnumpy(cc))).split()[-1])
+        if vc<vt:p=pf(unnumpy(div(vc,vt)),unnumpy(cc),unnumpy(ct))
+        else:p=pf(unnumpy(div(vt,vc)),
+            unnumpy(ct),unnumpy(cc))
         return[p,sqrt(vc),sqrt(vt)]
 
 def var(p,cr,wig,step,rd,bv,bc):
