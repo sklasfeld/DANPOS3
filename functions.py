@@ -1189,10 +1189,10 @@ def allPositionsInOneFile(ofile='result.xls',controlPositionFile=None,treatPosit
                 tp=div((minp+maxp),(2*step))
                 tdis=div((maxp-minp),(2*step))
                 while tdis>=0:
-                    if abs(maxv)>abs(dwig.data[cr][int(tp+tdis)]):
+                    if abs(maxv)<abs(dwig.data[cr][int(tp+tdis)]):
                         maxv=dwig.data[cr][tp+tdis]
                         p=tp+tdis
-                    if abs(maxv)>abs(dwig.data[cr][int(tp-tdis)]):
+                    if abs(maxv)<abs(dwig.data[cr][int(tp-tdis)]):
                         maxv=dwig.data[cr][tp-tdis]
                         p=tp-tdis
                     tdis-=1
