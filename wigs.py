@@ -315,8 +315,7 @@ class Wigs:
                 else:cut=0-log10(float(co[0]))
                 lgpcut=cut
                 cut=int(avg+0.5)
-                ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE))}''')
-                while(0-(functions.div(float(str(ppois(functions.div(cut*1.0,extend),functions.div(avg*1.0,extend))).split()[-1]),log(10)))<lgpcut):cut+=1
+                while(0-(functions.div(float(str(functions.ppois(functions.div(cut*1.0,extend),functions.div(avg*1.0,extend),lower_tail=False, log_bool = True)).split()[-1]),log(10)))<lgpcut):cut+=1
         sys.stdout.write('aveage density is ' + str(avg) + ', use clonal signal cutoff ' + str(cut) +  "\n")
         ks=list(self.keys())
         for chr in m.getChrs():

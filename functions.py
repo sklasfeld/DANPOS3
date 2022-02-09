@@ -37,34 +37,20 @@ def unnumpy(foo):
         foo = foo.item()
     return(foo)
 
-# equivalent of ppois function in R
+# equivalent of ppois function with lower.tail = False and log.p = True in R
 # q - vector of quantiles
 # mean - (AKA lambda) vector of (non-negative) means
-# lower_tail - logical; if TRUE probabilities are 
-#   P[x<=x], otherwise P[X>x]
-# log_bool - if TRUE, probabilies p are given as log(p)
-def ppois(q, mean, lower_tail=True, log_bool = False):
-    answer=poisson.cdf(q,mean)
-    if not lower_tail:
-        answer=1-answer
-    if log_bool:
-        answer = log(answer)
+def ppois(q, mean):
+    answer=poisson.logsf(q,mean)
     return(answer)
 
 
-# equivalent of pf function in R
+# equivalent of pf function with lower.tail = True and log.p = True in R
 # q - vector of quantiles
 # df1, df2 - degrees of freedom
-# lower_tail - logical; if TRUE probabilities are 
-#   P[x<=x], otherwise P[X>x]
-# log_bool - if true probabilities p are given as log(p)
-def pf(q,df1, df2, lower_tail=True, log_bool=False):
-    answer = f.cdf(q, dfn=df1,dfd=df2)
-    if not lower_tail:
-        answer=1-answer
-    if log_bool:
-        answer = log(answer)
-    return(answer)
+def pf(q,df1, df2):
+    answer = f.logcdf(q, dfn=df1,dfd=df2)/log(10)
+      return(answer)
 
 
 def danpos(tpath=None,tbg=None,opath='./',\
@@ -668,7 +654,6 @@ def scaleParser(amount,extend,groups):
 def region_differential(file1,file2,gainFile,lossFile,ofile=None,widthFDRlist=None,smtFDRlist=None,aucFDRlist=None,step=10,fdr=0):
     #r['options'](warn=-1)
     #prop=r('''function(vec){prop.test(matrix(vec,nrow=2))$p.value}''')
-    log10ppois=r('''function(q,r){ppois(q,r,lower.tail=FALSE,log.p = TRUE)/log(10)}''')
     f1,f2,gf,lf=open(file1).readlines(),open(file2).readlines(),open(gainFile).readlines(),open(lossFile).readlines()
     #print len(f1),len(f2),len(gf),len(lf)
     #f1.readline()
@@ -691,8 +676,7 @@ def region_differential(file1,file2,gainFile,lossFile,ofile=None,widthFDRlist=No
         if t1==t2:tdiff=0
         else:tdiff=log10PropTest([t1,t2,t2,t1])
         if s1==s2:sdiff=0
-        else:sdiff=float(str(log10ppois(unnumpy(max(s1,s2)+1),
-            unnumpy(min(s1,s2)+1))).split()[-1])
+        else:sdiff=float((ppois(unnumpy(max(s1,s2)+1),unnumpy(min(s1,s2)+1))/log(10)).split()[-1])
         gdiff,ldiff=float(gcol[6]),float(lcol[6])# (0-log10Pval) of gain and loss
         if fdr==1:
             wfdr = div(findRank(widthFDRlist,0-wdiff)*1.0,lw)
@@ -730,7 +714,6 @@ def region_differential(file1,file2,gainFile,lossFile,ofile=None,widthFDRlist=No
         i+=1
 def peakFDR(peakFile1,peakFile2=None,wg1=None,wg2=None,fdrsimu=1000000,cut=5):
     #r['options'](warn=-1)
-    logppois=r('''function(q,r){ppois(q,r,lower.tail=FALSE,log.p = TRUE)/log(10)}''')
     pk=open(peakFile1).readlines()
     if peakFile2!=None:pk+=open(peakFile2).readlines()[1:]
     i,lth=1,len(pk)
@@ -769,8 +752,7 @@ def peakFDR(peakFile1,peakFile2=None,wg1=None,wg2=None,fdrsimu=1000000,cut=5):
         if t1==t2:tdiff=0
         else:tdiff=log10PropTest([t1,t2,t2,t1])
         if s1==s2:sdiff=0
-        else:sdiff=float(str(logppois(unnumpy(max(s1,s2)+1),
-            unnumpy(min(s1,s2)+1))).split()[-1])
+        else:sdiff=float((ppois(unnumpy(max(s1,s2)+1),unnumpy(min(s1,s2)+1))/log(10)).split()[-1])
         w[i],s[i],t[i]=wdiff,sdiff,tdiff
         i+=1
         #print wdiff,sdiff,tdiff
@@ -1148,7 +1130,6 @@ def allPositionsInOneFile(ofile='result.xls',controlPositionFile=None,treatPosit
             dpd[col[0]][div(int(col[3]),step)]=-1
     
     print('calculating differential values for positions...')
-    ppois=r('''function(q,avg){return(0-ppois(q,avg,lower.tail=FALSE,log=TRUE)/log(10))}''')
     #rd=rd/step
     sumc=cwig.sum()
     sumt=twig.sum()
@@ -1174,12 +1155,13 @@ def allPositionsInOneFile(ofile='result.xls',controlPositionFile=None,treatPosit
             nuc+=1
 
             if test=='P':
-                if cwig.data[cr][div(p1,step)]>twig.data[cr][div(p2,step)]:
-                    dp1=float(ppois(unnumpy(cwig.data[cr][div(p1,step)]), 
-                        unnumpy(max(twig.data[cr][div(p2,step)],1)))[0])
+                #pdb.set_trace()
+                if cwig.data[cr][div(p1, step)] > twig.data[cr][div(p2, step)]:
+                    dp1 = float((0-(ppois(unnumpy(cwig.data[cr][div(p1, step)]),
+                                          unnumpy(max(twig.data[cr][div(p2, step)], 1)))/log(10))))
                 else:
-                    dp1=float(ppois(unnumpy(twig.data[cr][div(p2,step)]), 
-                        unnumpy(max(cwig.data[cr][div(p1,step)],1)))[0])
+                    dp1 = float((0-(ppois(unnumpy(twig.data[cr][div(p2, step)]),
+                                          unnumpy(max(cwig.data[cr][div(p1, step)], 1)))/log(10))))
 
             if len(c2tDic[cr][cpos])<2:# no differential position is assigned to c2tDic[cr][cpos] (cpos is the control nucleosome position position, c2tDic[cr][cpos][0] is the treatment nucleosome position position)
                 minp,maxp,maxv=min(p1,p2,dwig.data[cr].size*step-step,cwig.data[cr].size*step-step,twig.data[cr].size*step-step),max(p1,p2),0 # '*step' is add by kaifu on Mar 6, 2013
@@ -1320,10 +1302,6 @@ def log10fuztest(pc,pt,cr,cwig,twig=None,rd=None):
         v,c=var(p=pc,cr=cr,wig=cwig,step=step,rd=rd,bv=bv,bc=bc)
         if v>=bvc:return [0,sqrt(v)]
         else:
-            print("pf test parameters")
-            print(unnumpy(div(v,bvc)))
-            print(unnumpy(c))
-            print(unnumpy(bc))
             p=pf(unnumpy(div(v,bvc)),
                 unnumpy(c),unnumpy(bc), log_bool=True)
             return[p,sqrt(v)]

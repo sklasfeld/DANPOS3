@@ -193,13 +193,13 @@ class Wig:
             pks[chrosome_name][start_position]=end_position
             
         '''
-        ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE))}''')
+        #ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE))}''')
         m=self.mean()
         if height==0 and pheight!=0:
             #if fold!=0:height=m*fold
             #else:
             height=int(m+0.5)
-            while( (0-functions.div(float(str(ppois(height,m.item())).split()[-1]),log(10))) < pheight):height+=1
+            while( (0-functions.div(float(functions.ppois(height,m.item()).split()[-1]),log(10))) < pheight):height+=1
         #if not suppress:
         sys.stdout.write('whole genome aveage value is ' +
             str(m)+', use calling cutoff '+str(height) + "\n")
@@ -271,7 +271,7 @@ class Wig:
                         smt=','.join(smts)
                         lth=functions.div(len(smts),2)
                         if calculate_P_value:
-                            pvl=functions.div(float(str(ppois(v.item(),m.item())).split()[-1]),log(10))
+                            pvl=functions.div(float(functions.ppois(v.item(),m.item()).split()[-1]),log(10))
                             outf.write(chrom+"\t"+str(p)+"\t"+str(pks[chrom][p])+"\t"+smt+'\t'+str(v)+'\t+\t'+str(auc)+'\t'+str(width_above_cutoff)+'\t'+str(0-pvl)+"\n")
                         else:outf.write(chrom+"\t"+str(p)+"\t"+str(pks[chrom][p])+"\t"+smt+'\t'+str(v)+'\t+\t'+str(auc)+'\t'+str(width_above_cutoff)+'\n')
                     else:pks[chrom].pop(p)
@@ -281,13 +281,13 @@ class Wig:
         '''
         Add description here
         '''
-        ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE))}''')
+        #ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE))}''')
         m=self.mean()
         if height==0 and pheight!=0:
             #if fold!=0:height=m*fold
             #else:
             height=int(m+0.5)
-            while( (0-functions.div(float(str(ppois(height,m.item())).split()[-1]),log(10))) < pheight):height+=1
+            while( (0-functions.div(float(functions.ppois(height,m.item())).split()[-1],log(10))) < pheight):height+=1
         #if not suppress:
         sys.stdout.write('whole genome aveage value is '+str(m)+', use cutoff '+ str(height) + "\n")
         #lines=open(file).readlines()
@@ -330,7 +330,7 @@ class Wig:
                 auc=auc*step
                 total_width_above_cutoff+=width_above_cutoff
                 if calculate_P_value:
-                    pvl=functions.div(float(str(ppois(v.item(),m.item())).split()[-1]),log(10))
+                    pvl=functions.div(float(functions.ppois(v.item(),m.item()).split()[-1]),log(10))
                     outf.write(chrom + '\t' + str(start) + '\t' + str(regions[chrom][start]) +
                         '\t' + str(functions.div((regions[chrom][start] + start),2)) + '\t' + str(width_above_cutoff) +
                          '\t' + str(auc) + '\t' + str(v) + '\t' + str(0-pvl) + "\n")
@@ -373,11 +373,11 @@ class Wig:
                 if calculate_P_value:outf.write("chr\tstart\tend\tsmt_pos\tsmt_value\tsmt_log10pval\n")
                 else:outf.write("chr\tstart\tend\tsmt_pos\tsmt_value\n")
         twig=self
-        ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log.p=TRUE)/log(10))}''')
+        #ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log.p=TRUE)/log(10))}''')
         m=self.mean()
         if height==0 and pcut!=0:
             height=int(m+0.5)
-            while( (0-float(str(ppois(height,m.item())).split()[-1])) < pcut):height+=1
+            while( (0-float(functions.ppois(height,m.item())/log(10).split()[-1])) < pcut):height+=1
         #if not suppress:
         sys.stdout.write('whole genome aveage value is '+str(m)+', use calling cutoff' + str(height) + "\n")
             
@@ -410,7 +410,7 @@ class Wig:
                 ppos=dic[chrom]['ppos']
             tlen=poses.size
             if calculate_P_value:
-                pvs=ppois(FloatVector(dic[chrom]['v']),m.item())
+                pvs=functions.ppois(FloatVector(dic[chrom]['v']),m.item())/log(10)
             i=0
             while i<tlen:
                 pos=poses[i]
@@ -503,11 +503,11 @@ class Wig:
             else:
                 if calculate_P_value:outf.write("chr\tstart\tend\tsmt_pos\tsmt_value\tsmt_log10pval\n")
                 else:outf.write("chr\tstart\tend\tsmt_pos\tsmt_value\n")
-        ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log.p=TRUE)/log(10))}''')
+        #ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log.p=TRUE)/log(10))}''')
         m=self.mean()
         if height==0 and pcut!=0:
             height=int(m+0.5)
-            while( (0-float(str(ppois(height,m.item())).split()[-1])) < pcut):height+=1
+            while( (0-float(functions.ppois(height,m.item())/log(10).split()[-1])) < pcut):height+=1
         #print 'calling summits ...'
         #smts=twig.callSummits(width=width,pcut=1,height=height,regions=regions)
         #print 'merging summits ...'
@@ -532,7 +532,7 @@ class Wig:
                 ppos=dic[chrom]['ppos']
             tlen=poses.size
             if calculate_P_value:
-                pvs=ppois(FloatVector(dic[chrom]['v']),m.item())
+                pvs=functions.ppois(FloatVector(dic[chrom]['v']),m.item())/log(10)
             i=0
             while i<tlen:
                 pos=poses[i]
@@ -1282,7 +1282,7 @@ class Wig:
             A Wig class instance that cantain data for the differential signial
         
         '''
-        pp=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE)/log(10))}''')###### add by kaifu on Oct 18,2011
+        #pp=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE)/log(10))}''')###### add by kaifu on Oct 18,2011
         wig1=self#deepcopy(self)
         if wig1.step!=wig2.step:wig2.changeStep(wig1.step)
         out=Wig(step=wig1.step)
@@ -1324,7 +1324,7 @@ class Wig:
                 for start in starts :
                     end=frags[start]
                     sys.stdout.write('region: ' + str(start) + '-' + str(end) + "\n")
-                    result=pp(FloatVector(tstr1[start:end]),FloatVector(tstr2[start:end]))
+                    result=functions.ppois(FloatVector(tstr1[start:end]),FloatVector(tstr2[start:end]))/log(10)
                     p=start
                     while p<end:
                         if tstr1[p]==tstr2[p]:out.data[chrom][p]=0
