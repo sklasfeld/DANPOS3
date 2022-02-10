@@ -497,7 +497,7 @@ class reads:
         for sam in sam_reader.fetch():
             try:
                 #col=line.split('\t')
-                if sam.isunmapped:continue
+                if sam.is_unmapped:continue
                 name = sam.query_name
                 chm = sam.reference_name
                 stra = '+'
@@ -617,7 +617,7 @@ class reads:
         for sam in sam_reader.fetch():
             try:
                 # skip unmapped reads
-                if sam.isunmapped:continue
+                if sam.is_unmapped:continue
                 name = sam.query_name
                 chm = sam.reference_name
                 stra = '+'
