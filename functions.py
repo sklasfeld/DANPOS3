@@ -14,7 +14,7 @@ import re,sys
 from scipy.stats import poisson,f
 
 # python2 divides ints differently
-# than python3. Since this code was 
+# than python3. Since this code was
 # originally written in python2 we
 # correct the code using the following
 # two commands:
@@ -50,7 +50,7 @@ def ppois(q, mean):
 # df1, df2 - degrees of freedom
 def pf(q,df1, df2):
     answer = f.logcdf(q, dfn=df1,dfd=df2)/log(10)
-      return(answer)
+    return(answer)
 
 
 def danpos(tpath=None,tbg=None,opath='./',\
@@ -64,45 +64,45 @@ def danpos(tpath=None,tbg=None,opath='./',\
     '''
     Description:
         This is the main function that accepts all input parameters and call other functions in the danpos package to complete the work.
-    
+
     Parameters:
         please see the help messages for DANPOS by command lines "python danpos.py -h"
-        
+
     '''
-    
+
     ###### step 1 start --- parameter checking and proccessing--- ######
     starttime=time()
     rd,hdiff=distance,1-ratio#int(distance*1.6/(2*step))*step
-    
+
     # line below modified because rpy is not as efficient
     #fcut=float(str(r.sd(FloatVector(list(range(0-rd,rd+step,step))))).split()[-1])*(0.95-div(step,(2.0*rd)))
     fcut=float(str(numpy.std(list(range(0-rd,rd+step,step)))).split()[-1]) * (0.95-div(step,(2.0*rd)))
 
     print('rd',rd,', step',step,' fcut,',fcut)
-    
+
     pairs,groups=pathParser(tpath=tpath)
     if len(groups)==0:return False
-    
-    
+
+
     bggroups,subpairs=bgPathParser(tbg=tbg,groups=groups)
     #print bggroups
     #print subpairs
     #return
     if tbg!=None and (len(bggroups)==0 or len(subpairs)==0):return False
-    
+
     #print 'I am here'
-    
+
     scalepairs=scaleParser(amount=amount,extend=extend,groups=groups)
     if amount!=None and len(scalepairs)==0:return False
-    
+
     while opath[-1]=='/':opath=opath[:-1]
     if len(opath)<1:opath='result'
     elif opath[-1]=='.':opath+='/result'
     if not os.path.isdir(opath):os.mkdir(opath)
     addname='.'
     ###### step 1 end --- parameter checking and proccessing--- ######
-    
-    
+
+
     ###### step 2 start --- load MNase-seq data sets--- ######
     maxgroupsize=0
     for groupname in groups:
@@ -171,7 +171,7 @@ def danpos(tpath=None,tbg=None,opath='./',\
         pooledbggroups=''
         bggroups=''
     ###### step 4 end --- sequencing background (genomic input) subtraction --- ######
-    
+
 
     ###### step 5 start --- normalization --- ######
     norname={'Q':'Qnor.','S':'Snor.','F':'Fnor.','N':''}
@@ -202,7 +202,7 @@ def danpos(tpath=None,tbg=None,opath='./',\
                 print('time elapsed:', time()-starttime,'seconds')
         wigs=''
     ###### step 5 end --- normalization --- ######
-    
+
 
 
 
@@ -224,8 +224,8 @@ def danpos(tpath=None,tbg=None,opath='./',\
             print('time elapsed:', time()-starttime,'seconds')
 
     ###### step 8 end --- smoothing --- ######
-    
-    
+
+
     ###### step 9 start --- replicate position calling --- ######
     '''
     if pcfer:
@@ -235,8 +235,8 @@ def danpos(tpath=None,tbg=None,opath='./',\
                 for filename in groups[groupname].keys():groups[groupname].get(filename).callPositions(os.path.join(opath,"replicate_positions/"+filename[:-3]+"positions.xls"),width=width,distance=distance,edge=edge,fill_gap=fill_gap,fill_value=fill_value,pcut=pheight,height=height,calculate_P_value=1,poscal=1)
     '''
     ###### step 9 end --- replicate position calling --- ######
-    
-    
+
+
     ###### step 10 start --- pooling --- ######
     pooledgroups={}
     all_wig=all_wig_format(path=tpath)
@@ -274,9 +274,9 @@ def danpos(tpath=None,tbg=None,opath='./',\
         print('time elapsed:', time()-starttime,'seconds')
     #else:print 'no comparison was specified to be done'
     ###### step 11 end --- differential testing --- ######
-    
+
     ###### step 12 start --- peak calling --- ######
-    
+
     peaks={}
     if (call_region==1 ) or (call_peak==1):
         if call_peak==1:printhead='\npeak'
@@ -292,7 +292,7 @@ def danpos(tpath=None,tbg=None,opath='./',\
                 calculate_P_value=1,
                 mode='w',title_line=1,pos_only=False)
             print('time elapsed:', time()-starttime,'seconds')
-        
+
         if len(dfgroups)>0 and logp!=0:
             #print('\ncalling differential regions...')
             #print('call for gaining...')
@@ -306,12 +306,12 @@ def danpos(tpath=None,tbg=None,opath='./',\
                 dfpeakgroups2[dfname]=dfgroups[dfname].callRegions(ofile=None,width=0,distance=0,pheight=1,height=logp,calculate_P_value=0,mode='w',title_line=1,pos_only=True)
                 dfgroups[dfname].foldChange(-1)
                 print('time elapsed:', time()-starttime,'seconds')
-        
+
         if len(pooledgroups)>1:
             if call_peak==1:print('\nmerging peaks from all groups...')
             else:print('\nmerging regions from all groups...')
         peak_group_list=[peakgroups]
-        if len(dfgroups)>0 and logp!=0:peak_group_list+=[dfpeakgroups,dfpeakgroups2] 
+        if len(dfgroups)>0 and logp!=0:peak_group_list+=[dfpeakgroups,dfpeakgroups2]
         for temp_peak_group in peak_group_list:#merge positions from all group into regions
             for name in temp_peak_group:
                 temp_peaks=temp_peak_group[name]
@@ -336,9 +336,9 @@ def danpos(tpath=None,tbg=None,opath='./',\
                 for start in starts:fo.write(chr+'\t'+str(start)+'\t'+str(peaks[chr][start])+'\n')
             '''
 
-        
+
         print('\nretriving peak values for each group...')
-        
+
         for groupname in pooledgroups:
             print(groupname)
             temp_peaks=merge_peaks_by_head_tail_distance(peaks=peakgroups[groupname],distance=peak_distance)
@@ -404,8 +404,8 @@ def danpos(tpath=None,tbg=None,opath='./',\
         print('time elapsed:', time()-starttime,'seconds')
     ###### step 12 end --- peaks to regions --- ######
 
- 
-    
+
+
     ###### step 12 start --- position calling --- ######
     if call_position==1:
         if call_region==0 and call_peak==0: peaks=None
@@ -432,13 +432,13 @@ def danpos(tpath=None,tbg=None,opath='./',\
                     while i<lth:
                         fo.write(chr+'\t'+str(refdic[chr]['p'][i])+'\n')#+str(refdic[chr]['v'][i])+'\n')
                         i+=1
-                
+
         for groupname in pooledgroups:
             if len(pooledgroups)<2:continue
             print('\nfine-tuning positions for',groupname,'by comparing to the reference map...')
             tdic=positionAdjust(dic=refdic,infile=os.path.join(opath,'pooled',groupname+addname+"positions.xls"),outfile=None,wg=pooledgroups[groupname],distance=distance,fcut=fcut,hdiff=hdiff)
             pooledgroups[groupname].fillPositions(dic=tdic,file=os.path.join(opath,'pooled',groupname+addname+"positions.ref_adjust.xls"),width=width,distance=distance,edge=edge,pcut=pheight,height=height,calculate_P_value=1,mode='w',title_line=1,poscal=1,rd=rd)
-        
+
         if len(dfgroups)>0:
             dsmtgroups,dsmtgroups2={},{}
             if logp!=0:
@@ -467,9 +467,9 @@ def danpos(tpath=None,tbg=None,opath='./',\
                     print 'time elapsed:', time()-starttime,'seconds'
             '''
     ###### step 12 end --- position calling --- ######
-    
-    
-    
+
+
+
     ###### step 13 start --- map differential positions to nucleosome positions --- ######
     if len(dfgroups)>0:
         for dfname in dfgroups:
@@ -523,7 +523,7 @@ def danpos(tpath=None,tbg=None,opath='./',\
                 smtFDRlist=fdrlist[1],aucFDRlist=fdrlist[2],step=step,fdr=fdr)
                 print('time elapsed:', time()-starttime,'seconds')
     ###### step 13 end --- map differential positions to nucleosome positions --- ######
-    
+
     seconds=int(time()-starttime)
     hours=div(seconds,3600)
     minutes=div((seconds-hours*3600),60)
@@ -609,7 +609,7 @@ def bgPathParser(tbg,groups=None):
 
 def scaleParser(amount,extend,groups):
     scalepairs={}
-    if amount!=None:        
+    if amount!=None:
         mpairs=amount.split(',')
         if len(mpairs)==1:#all data set normalized to the same amount
             temp=mpairs[0].split(':')
@@ -636,7 +636,7 @@ def scaleParser(amount,extend,groups):
             while group[-1]=='/':group=group[:-1]
             groupname=re.sub('/+','_',group)
             while groupname[0] in ['.','_']:groupname=groupname[1:]
-            
+
             if os.path.isfile(group):
                 if groupname[-2:]=='gz':groupname=groupname[:-3]
                 if groupname[-6:]=='bowtie':groupname=groupname[:-7]
@@ -760,7 +760,7 @@ def peakFDR(peakFile1,peakFile2=None,wg1=None,wg2=None,fdrsimu=1000000,cut=5):
     s.sort()
     t.sort()
     return [0-w,0-s,0-t]
-    
+
 
 def log10PropTest(list=[]):
     '''
@@ -769,7 +769,7 @@ def log10PropTest(list=[]):
     Return:
         log scaled P value
     '''
-    log10PropTest=r('''function (x, correct = TRUE) 
+    log10PropTest=r('''function (x, correct = TRUE)
     {
         x=matrix(x,nrow=2)
         l <- nrow(x)
@@ -804,8 +804,8 @@ def log10FisherTest(list=[]):
     Return:
         log scaled P value
     '''
-    log10PropTest=r('''function (x) 
-    {        
+    log10PropTest=r('''function (x)
+    {
         return( phyper(x[3] - 1, x[1], x[4]-x[1], x[2], lower.tail = FALSE,log.p=TRUE)/log(10) )
     }
 
@@ -877,7 +877,7 @@ def loadinput(path,fs=None,cut=1e-10,save=False,wgfmt='fixed',step=10,extend=100
     '''
     Description:
         load occupancy data in '.wig' format file, or calculate occupancy from sequencing reads, use sequencing reads in '.bed','.sam', and '.bam' format as input, generate occupancy data in wiggle format.
-    
+
     Parameters:
         path: a path to the directory of file(s) of sequence reads or occupancy data.
         cut: the cutoff for removing clonal reads, could be P value larger than 0 and small than 1, or count as a positive integer.
@@ -887,10 +887,10 @@ def loadinput(path,fs=None,cut=1e-10,save=False,wgfmt='fixed',step=10,extend=100
         step: the step size of the occupancy data
         fs: average size of fragments that are subject to sequencing and generate the reads, only for signgle-end reads. When this value is not given, a fs value will be infered by the program.
         extend: a interger value, each read will be extend to this length.
-        mifrsz: the minimal estimated average fragment size 
+        mifrsz: the minimal estimated average fragment size
         mafrsz: the maximal estimated average fragment size
         paired: is the reads paired-end (set to 1) or single-end (set to 0)
-    
+
     '''
     wigs={}
     if os.path.isdir(path):
@@ -983,7 +983,7 @@ def loadinput(path,fs=None,cut=1e-10,save=False,wgfmt='fixed',step=10,extend=100
             while fname[0] in ['.','_']:fname=fname[1:]
             wigs[fname]=Wig(path,step=step)
             if starttime!=None: print('time elapsed:', time()-starttime,'seconds')
-        
+
     out=Wigs()
     out.data=wigs
     wigs=out
@@ -1016,7 +1016,7 @@ def combinePositions(controlPositionFile,treatPositionFile,gainPositionFile=None
         if col[0] not in tpd:tpd[col[0]]={}
         tpd[col[0]][int(col[3])]=-1
         nt+=1
-    
+
     c2t={}
     t2c={}
     while nc>0 or nt>0:
@@ -1059,7 +1059,7 @@ def combinePositions(controlPositionFile,treatPositionFile,gainPositionFile=None
                     c2t[cr][tpos]=tpos
                     tpd[cr].pop(tpos)
                     nt-=1
-    
+
     t2c={}
     for cr in c2t:
         t2c[cr]={}
@@ -1128,7 +1128,7 @@ def allPositionsInOneFile(ofile='result.xls',controlPositionFile=None,treatPosit
             col=line.split()
             if col[0] not in dpd:cpd[col[0]],tpd[col[0]],dpd[col[0]]={},{},{}
             dpd[col[0]][div(int(col[3]),step)]=-1
-    
+
     print('calculating differential values for positions...')
     #rd=rd/step
     sumc=cwig.sum()
@@ -1234,7 +1234,7 @@ def allPositionsInOneFile(ofile='result.xls',controlPositionFile=None,treatPosit
             occFDRlist=occFDR(dwig=dwig,simu=fdrsimu,regions=fdrRegions)
         for i in range(len(dr1)):dr1[i]=div(findRank(occFDRlist,dr1[i])*1.0,fdrsimu)
         for i in range(len(dr2)):dr2[i]=div(findRank(occFDRlist,dr2[i])*1.0,fdrsimu)
-        
+
         print('calculating fuzziness differential FDR...')
         if type(fuzFDRlist).__module__=='builtins' and fuzFDRlist==None:
             fuzFDRlist=fuzFDR(cwig=cwig,twig=twig,simu=fdrsimu,rd=rd,regions=fdrRegions)
@@ -1256,7 +1256,7 @@ def fuzFDR(cwig,twig,simu=10000,rd=None,regions=None):
         for cr in regions:
             for start in regions[cr]:
                 gs+=regions[cr][start]-start
-    
+
     #if simu==0:simu=min(100000,max(gs/100,1000))
     vec=numpy.array([0.0])
     vec.resize(simu,refcheck=0)
@@ -1295,7 +1295,7 @@ def log10fuztest(pc,pt,cr,cwig,twig=None,rd=None):
     bv,bc=0,div(rd*2,step)
     for d in range(-rd,rd+step,step):bv+=d*d
     bvc=div(bv,bc)
-        
+
     if twig==None:
         if pc>=(cwig.data[cr].size-1)*rd:return [0,sqrt(bvc)]
         if pc<rd: return [0,sqrt(bvc)]
@@ -1303,7 +1303,7 @@ def log10fuztest(pc,pt,cr,cwig,twig=None,rd=None):
         if v>=bvc:return [0,sqrt(v)]
         else:
             p=pf(unnumpy(div(v,bvc)),
-                unnumpy(c),unnumpy(bc), log_bool=True)
+                unnumpy(c),unnumpy(bc))
             return[p,sqrt(v)]
     else:
         if cr not in twig.data:return(fuztest(pc=pc,pt=pt,cr=cr,cwig=cwig,twig=None,rd=rd))
@@ -1316,9 +1316,9 @@ def log10fuztest(pc,pt,cr,cwig,twig=None,rd=None):
         if pt<rd: return [0,sqrt(bvc),sqrt(bvc)]
         vc,cc,=var(p=pc,cr=cr,wig=cwig,step=step,rd=rd,bv=bv,bc=bc)
         vt,ct=var(p=pt,cr=cr,wig=twig,step=step,rd=rd,bv=bv,bc=bc)
-        if vc<vt:p=pf(unnumpy(div(vc,vt)),unnumpy(cc),unnumpy(ct), log_bool=True)
+        if vc<vt:p=pf(unnumpy(div(vc,vt)),unnumpy(cc),unnumpy(ct))
         else:p=pf(unnumpy(div(vt,vc)),
-            unnumpy(ct),unnumpy(cc), log_bool=True)
+            unnumpy(ct),unnumpy(cc))
         return[p,sqrt(vc),sqrt(vt)]
 
 def var(p,cr,wig,step,rd,bv,bc):
@@ -1334,7 +1334,7 @@ def var(p,cr,wig,step,rd,bv,bc):
             print(p,d,wig.data[cr].size)
             #return [v1/c1,c1]
     return [div(v1,c1),c1]
-  
+
 def occFDR(dwig,simu=1000000,regions=None):
     gs=0
     if regions==None:
@@ -1347,7 +1347,7 @@ def occFDR(dwig,simu=1000000,regions=None):
         for cr in regions:
             for start in regions[cr]:
                 gs+=regions[cr][start]-start
-    
+
     #if simu==0:simu=min(100000,max(gs/100,1000))
     vec=numpy.array([0.0])
     vec.resize(simu,refcheck=0)
@@ -1384,7 +1384,7 @@ def findRank(vec,v):
         if p<=0: return 0
         if vec[p-1]>=v and vec[p]<=v:
             return p
-        elif vec[p]>v:start=p 
+        elif vec[p]>v:start=p
         elif vec[p]<v:end=p
 
 def refPositions(positionFiles,distance=100):
@@ -1514,7 +1514,7 @@ def positionAdjust(dic,infile,outfile,wg,distance=100,fcut=None,hdiff=0.1):
             mi2 = wg.data[cr][int(tp):int(min(tp+btd,wg.data[cr].size))].min()
             mi=max(mi1,mi2)
             if div((h-mi),h)>=hdiff and div((h-mi),h)>=hdiff*1.5:tdic[cr][pos]=line#retuire occupancy to be hdiff fold lower at one linker relative to position center, and 1.5*hdiff lower at the other linker.
-            
+
         '''
         if mergeto[cr].has_key(pos):
             tpos=mergeto[cr][pos]
@@ -1607,7 +1607,7 @@ def scn(tpath,name='result',pdis=3000,step=1,mapq=30,clipSize=3,inter=True,intra
         uwigs.data[groupname].foldChange(div(taverage,sampling_total[groupname]))
         print('\nnormalize',groupname,'wiggle data of all all reads from',tsum,'to',uwigs.data[groupname].sum())
         if saveWig:uwigs.data[groupname].save(os.path.join(name,groupname)+'.all.nor.wig')
-    
+
     for groupname in groups:
         print('\ncalling for',groupname,'...')
         tsum=groups[groupname].sum()
@@ -1631,7 +1631,7 @@ def scn(tpath,name='result',pdis=3000,step=1,mapq=30,clipSize=3,inter=True,intra
         #The value of groups[groupname] will be setted as total count link reads.
         #groups[groupname]=
         translocationLinks(peaks=pks,samFile=os.path.join(name,groupname+'.sam'),linkfile=os.path.join(name,groupname+'.trans.links.xls'),bindic=bindic,fold=0,logP=0,binSize=binSize,wsize=wsize,wstep=wstep)
-    
+
     if len(pairs)>0:
         for pair in pairs:
             print('\ncomparing',pair,'...')
@@ -1643,9 +1643,9 @@ def scn(tpath,name='result',pdis=3000,step=1,mapq=30,clipSize=3,inter=True,intra
             diffwig.callRegions(ofile=os.path.join(name,pair[0]+'-'+pair[1]+'.all.cnv.sites.loss.xls'),width=width,distance=distance,pheight=pheight,height=height,calculate_P_value=0,mode='w',title_line=1,pos_only=True,fold=0,suppress=True)
             tn1,tn2,sf1,sf2,lf1,lf2,lf=sampling_total[pair[0]],sampling_total[pair[1]],os.path.join(name,pair[0]+'.trans.sam'),os.path.join(name,pair[1]+'.trans.sam'),os.path.join(name,pair[0]+'.trans.links.xls'),os.path.join(name,pair[1]+'.trans.links.xls'),os.path.join(name,'-'.join(pair)+'.trans.links.xls')
             scnCompare(tn1=tn1,tn2=tn2,sf1=sf1,sf2=sf2,lf1=lf1,lf2=lf2,lf=lf,bindic=bindic,width=width,distance=distance,pheight=pheight,height=height,linkfold=linkfold,linkLogP=linkLogP,binSize=binSize,wsize=wsize,wstep=wstep)
-        
+
     print('\nall job done, cheers!\n\n')
-    
+
 def scnCompare(tn1,tn2,sf1,sf2,lf1,lf2,lf,pvalue=1e-3,bindic={},width=0,distance=250,pheight=1,height=5,zscore=3,linkfold=0,linkLogP=0,binSize=1000,wsize=500,wstep=0):
     pvalue=div(log(pvalue),log(10))
     tn=div((tn1+tn2),2.0)
