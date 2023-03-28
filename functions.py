@@ -12,6 +12,7 @@ from rpy2.robjects import r, FloatVector
 import re,sys
 # to replace having to use R in python
 from scipy.stats import poisson,f
+import pdb
 
 # python2 divides ints differently
 # than python3. Since this code was
@@ -37,223 +38,269 @@ def unnumpy(foo):
         foo = foo.item()
     return(foo)
 
-# equivalent of ppois function with lower.tail = False and log.p = True in R
-# q - vector of quantiles
-# mean - (AKA lambda) vector of (non-negative) means
-def ppois(q, mean):
-    answer=poisson.logsf(q,mean)
-    return(answer)
+def ppois(q: int, mean: float) -> float:
+    """
+    Calculates the logarithmic survival function of the Poisson distribution.
+    equivalent of ppois function with lower.tail = False and log.p = True in R
+
+    Args:
+        q (int): vector of quantiles
+        mean (float): (AKA lambda) vector of (non-negative) means
+
+    Returns:
+        float: The logarithmic survival function value.
+    """
+    logsf_value=poisson.logsf(q,mean)
+    return(logsf_value)
+
+def pf(q, df1, df2):
+    """
+    Calculates the base-10 logarithm of the cumulative distribution function of the F-distribution.
+    equivalent of pf function with lower.tail = True and log.p = True in R
+
+    Args:
+        q (float): vector of quantiles
+        df1 (float): The degrees of freedom of the numerator.
+        df2 (float): The degrees of freedom of the denominator.
+
+    Returns:
+        float: The logarithm of the CDF value.
+    """
+    logcdf_value = f.logcdf(q, dfn=df1, dfd=df2)
+    log10_cdf_value = logcdf_value / numpy.log10(numpy.e)
+    return log10_cdf_value
 
 
-# equivalent of pf function with lower.tail = True and log.p = True in R
-# q - vector of quantiles
-# df1, df2 - degrees of freedom
-def pf(q,df1, df2):
-    answer = f.logcdf(q, dfn=df1,dfd=df2)/log(10)
-    return(answer)
-
-
-def danpos(tpath=None,tbg=None,opath='./',\
-           nonzero=False,amount=None,nor='Q',region_file=None,test="P",save=True,fdr=0,\
-           pheight=1e-5,height=5,logp=5,\
-           call_position=1,ref_position=None,both=True,width=40,distance=165,fill_gap=False,fill_value=1,edge=1,fcut=None,rd=None,ratio=0.9,\
-           call_peak=0,ref_peak=None,peak_distance=3000,peak_width=40,\
-           call_region=0,ref_region=None,region_distance=3000,region_width=40,\
-           lmd=300,cut=0,wgfmt='fixed',step=10,exclude_low_percent=1,exclude_high_percent=1,\
-           fs=None,mifrsz=50,mafrsz=200,extend=74,smooth_width=40,pcfer=0,paired=0):
-    '''
+def danpos(tpath=None, tbg=None, opath='./', nonzero=False, amount=None, nor='Q',
+            region_file=None, test="P", save=True, fdr=0, pheight=1e-5, height=5,
+            logp=5, call_position=1, ref_position=None, both=True, width=40,
+            distance=165, fill_gap=False, fill_value=1, edge=1, fcut=None, rd=None,
+            ratio=0.9, call_peak=0, ref_peak=None, peak_distance=3000, peak_width=40,
+            call_region=0, ref_region=None, region_distance=3000, region_width=40,
+            lmd=300, cut=0, wgfmt='fixed', step=10, exclude_low_percent=1, exclude_high_percent=1,
+            fs=None, mifrsz=50, mafrsz=200, extend=74, smooth_width=40, pcfer=0, paired=0):
+    """
     Description:
-        This is the main function that accepts all input parameters and call other functions in the danpos package to complete the work.
+        This is the main function that accepts all input parameters and calls other functions in the danpos package to complete the work.
 
     Parameters:
-        please see the help messages for DANPOS by command lines "python danpos.py -h"
+        Please see the help messages for DANPOS by command lines "python danpos.py -h".
+    """
 
-    '''
+    # Step 1: Parameter checking and processing
+    starttime = time()
+    rd = distance
+    hdiff = 1 - ratio
 
-    ###### step 1 start --- parameter checking and proccessing--- ######
-    starttime=time()
-    rd,hdiff=distance,1-ratio#int(distance*1.6/(2*step))*step
+    fcut = float(numpy.std(list(range(0 - rd, rd + step, step)))) * (0.95 - div(step, (2.0 * rd)))
+    print('rd', rd, ', step', step, ', fcut,', fcut)
 
-    # line below modified because rpy is not as efficient
-    #fcut=float(str(r.sd(FloatVector(list(range(0-rd,rd+step,step))))).split()[-1])*(0.95-div(step,(2.0*rd)))
-    fcut=float(str(numpy.std(list(range(0-rd,rd+step,step)))).split()[-1]) * (0.95-div(step,(2.0*rd)))
+    pairs, groups = pathParser(tpath=tpath)
+    if len(groups) == 0:
+        return False
 
-    print('rd',rd,', step',step,' fcut,',fcut)
+    bggroups, subpairs = bgPathParser(tbg=tbg, groups=groups)
+    if tbg != None and (len(bggroups) == 0 or len(subpairs) == 0):
+        return False
 
-    pairs,groups=pathParser(tpath=tpath)
-    if len(groups)==0:return False
+    scalepairs = scaleParser(amount=amount, extend=extend, groups=groups)
+    if amount != None and len(scalepairs) == 0:
+        return False
 
+    while opath[-1] == '/':
+        opath = opath[:-1]
+    if len(opath) < 1:
+        opath = 'result'
+    elif opath[-1] == '.':
+        opath += '/result'
+    if not os.path.isdir(opath):
+        os.mkdir(opath)
+    addname = '.'
 
-    bggroups,subpairs=bgPathParser(tbg=tbg,groups=groups)
-    #print bggroups
-    #print subpairs
-    #return
-    if tbg!=None and (len(bggroups)==0 or len(subpairs)==0):return False
-
-    #print 'I am here'
-
-    scalepairs=scaleParser(amount=amount,extend=extend,groups=groups)
-    if amount!=None and len(scalepairs)==0:return False
-
-    while opath[-1]=='/':opath=opath[:-1]
-    if len(opath)<1:opath='result'
-    elif opath[-1]=='.':opath+='/result'
-    if not os.path.isdir(opath):os.mkdir(opath)
-    addname='.'
-    ###### step 1 end --- parameter checking and proccessing--- ######
+    # Step 1 completed.
 
 
-    ###### step 2 start --- load MNase-seq data sets--- ######
-    maxgroupsize=0
+    # Step 2: load MNase-seq data sets
+    maxgroupsize = 0
     for groupname in groups:
-        groups[groupname]=loadinput(groups[groupname],fs=fs,cut=cut,save=False,wgfmt=wgfmt,\
-                                    step=step,extend=extend,mifrsz=mifrsz,mafrsz=mafrsz,paired=paired,starttime=starttime)
-            # cut is set to 0 now, because removing clonal signal is to be done at occupancy level in wigs now (Nov 14, 2012)
-            # cut is re-activated now, because removing clonal signal is not to be done at occupancy level in wigs now (July 08 2013)
-        if maxgroupsize<len(list(groups[groupname].keys())):maxgroupsize=len(list(groups[groupname].keys()))
-        #print 'time elapsed:', time()-starttime,'seconds'
+        groups[groupname]=loadinput(groups[groupname], fs=fs, cut=cut, save=False,
+                                    wgfmt=wgfmt, step=step, extend=extend, mifrsz=mifrsz,
+                                    mafrsz=mafrsz, paired=paired, starttime=starttime)
+
+        if maxgroupsize < len(list(groups[groupname].keys())):
+            maxgroupsize = len(list(groups[groupname].keys()))
+
+    # Save raw data if nexessary
     if save:
-        if (tbg!=None) or (maxgroupsize>1) or (smooth_width>1) or (amount!=None) or ((nor!='N') and ((len(groups)>1) or (maxgroupsize>1))):
-            if (not os.path.isdir(opath+'/raw')):os.mkdir(opath+'/raw') #creat a directory to save files of wiggle data that are not normalized
+        if (tbg is not None) or (maxgroupsize > 1) or (smooth_width > 1) or (amount is not None) or ((nor != 'N') and ((len(groups) > 1) or (maxgroupsize > 1))):
+            if not os.path.isdir(os.path.join(opath,'raw')):
+                os.mkdir(os.path.join(opath, 'raw'))
             print('\nsaving raw data')
-            for groupname in groups:groups[groupname].save(os.path.join(opath,'raw'),format=wgfmt,step=step)
+            for groupname in groups:
+                groups[groupname].save(os.path.join(opath,'raw'), format=wgfmt, step=step)
             print('time elapsed:', time()-starttime,'seconds')
-    ###### step 2 end --- load MNase-seq data sets--- ######
+    # Step 2 completed
 
 
-    ###### step 3 start --- load genomic background data sets--- ######
-    if tbg!=None:
+    # Step 3 load genomic background data sets
+    if tbg is not None:
         for bggroupname in bggroups:
-            bggroups[bggroupname]=loadinput(bggroups[bggroupname],fs=100,cut=cut,save=False,wgfmt=wgfmt,\
-                              step=step,extend=100,mifrsz=mifrsz,mafrsz=mafrsz,paired=paired,starttime=starttime)
-            # cut is set to 0 now, because removing clonal signal is to be done at occupancy level in wigs now (Nov 14, 2012)
-            # cut is re-activated now, because removing clonal signal is not to be done at occupancy level in wigs now (July 08 2013)
+            bggroups[bggroupname] = loadinput(bggroups[bggroupname], fs=100, cut=cut,
+                            save=False, wgfmt=wgfmt, step=step, extend=100, mifrsz=mifrsz,
+                            mafrsz=mafrsz, paired=paired, starttime=starttime)
+
+        # Save raw background data if nexessary
         if save:
             print('\nsaving raw background data')
-            for bggroupname in bggroups:bggroups[bggroupname].save(os.path.join(opath,'raw'),format=wgfmt,step=step)
+            for bggroupname in bggroups:
+                bggroups[bggroupname].save(os.path.join(opath,'raw'), format=wgfmt, step=step)
             print('time elapsed:', time()-starttime,'seconds')
-    ###### step 3 end --- load genomic background data sets--- ######
+    # Step 3 completed
 
 
-    ###### step 4 start --- genomic background (genomic input) subtraction --- ######
-    if tbg!=None:
+    # Step 4: genomic background (genomic input) subtraction
+    if tbg is not None:
         print('\nsubtracting input effects... ')
         addname+='bgsub.'
-        if not os.path.isdir(os.path.join(opath,'pooled')):os.mkdir(os.path.join(opath,'pooled'))
+        if not os.path.isdir(os.path.join(opath,'pooled')):
+            os.mkdir(os.path.join(opath,'pooled'))
+
+        # Compute pooled background groups
         pooledbggroups={}
         for groupname in subpairs:
             print(groupname)
-            bggroupname=subpairs[groupname]
-            if bggroupname!='None':
+            bggroupname = subpairs[groupname]
+            if bggroupname is not 'None':
                 if bggroupname not in pooledbggroups:
                     bgfilenames=list(bggroups[bggroupname].keys())
-                    if len(bgfilenames)>1:bggroups[bggroupname].nor(nor='F',exclude_low_percent=0,exclude_high_percent=0,scalepairs=None,sampling_total=None,nonzero=False)
-                    pooledbggroups[bggroupname]=bggroups[bggroupname].pop(bgfilenames[0])
                     if len(bgfilenames)>1:
-                        for bgfilename in bgfilenames[1:]:pooledbggroups[bggroupname].add(bggroups[bggroupname].pop(bgfilename))
+                        bggroups[bggroupname].nor(nor='F', exclude_low_percent=0,
+                                        exclude_high_percent=0, scalepairs=None,
+                                        sampling_total=None, nonzero=False)
+                    pooledbggroups[bggroupname] = bggroups[bggroupname].pop(bgfilenames[0])
+                    if len(bgfilenames)>1:
+                        for bgfilename in bgfilenames[1:]:
+                            pooledbggroups[bggroupname].add(bggroups[bggroupname].pop(bgfilename))
                         pooledbggroups[bggroupname].foldChange(div(1.0,len(bgfilenames)))
-                        #pooledbggroups[bggroupname].save(os.path.join(opath,'pooled',bggroupname+".wig"),format=wgfmt,step=step)
-                    if not os.path.isfile(os.path.join(opath,'pooled',bggroupname+".wig")):pooledbggroups[bggroupname].save(os.path.join(opath,'pooled',bggroupname+".wig"),format=wgfmt,step=step)
+                    if not os.path.isfile(os.path.join(opath, 'pooled', bggroupname+".wig")):
+                        pooledbggroups[bggroupname].save(os.path.join(opath, 'pooled', bggroupname+".wig"),
+                                                         format=wgfmt, step=step)
+
+            # Subtract background from each experimental group
             for filename in list(groups[groupname].keys()):
-                newfilename=filename[:-3]+'bgsub.wig'
-                temp=groups[groupname].pop(filename)
-                if bggroupname!='None':temp.bgsub(pooledbggroups[bggroupname],lmd=lmd)
+                newfilename = filename[:-3]+'bgsub.wig'
+                temp = groups[groupname].pop(filename)
+                if bggroupname!='None':
+                    temp.bgsub(pooledbggroups[bggroupname], lmd=lmd)
                 groups[groupname].set(newfilename,temp)
                 temp=''
         print('time elapsed:', time()-starttime,'seconds')
+
         if save:
-            if (maxgroupsize>1) or (smooth_width>1) or (amount!=None) or ((nor!='N') and ((len(groups)>1) or (maxgroupsize>1))):
+            if (maxgroupsize > 1) or (smooth_width > 1) or (amount != None) or ((nor != 'N') and ((len(groups) > 1) or (maxgroupsize > 1))):
                 print('\nsaving background subtracted data')
-                if (not os.path.isdir(os.path.join(opath,"bgsub"))):os.mkdir(os.path.join(opath,"bgsub"))
+                if (not os.path.isdir(os.path.join(opath,"bgsub"))):
+                    os.mkdir(os.path.join(opath,"bgsub"))
                 for groupname in groups:
-                    groups[groupname].save(os.path.join(opath,"bgsub"),format=wgfmt,step=step)
-                print('time elapsed:', time()-starttime,'seconds')
+                    groups[groupname].save(os.path.join(opath, "bgsub"), format=wgfmt, step=step)
+                print('time elapsed:', time()-starttime, 'seconds')
         pooledbggroups=''
         bggroups=''
-    ###### step 4 end --- sequencing background (genomic input) subtraction --- ######
+    # Step 4 completed.
 
-
-    ###### step 5 start --- normalization --- ######
+    # Step 5: normalization
     norname={'Q':'Qnor.','S':'Snor.','F':'Fnor.','N':''}
-    if len(groups)<2:
-        groupname=list(groups.keys())[0]
-        if len(list(groups[groupname].keys()))<2 and amount==None:save,nor=0,'N'
-    if (nor!='N') and ((len(groups)>1) or (maxgroupsize>1) or amount!=None):
+    if len(groups) < 2:
+        groupname = list(groups.keys())[0]
+        if len(list(groups[groupname].keys())) < 2 and amount == None:
+            save = 0
+            nor = 'N'
+    if (nor != 'N') and ((len(groups) > 1) or (maxgroupsize > 1) or amount != None):
         print('\nnormalizing wigs...')
         addname+=norname[nor]
-        wigs=Wigs(step=step)
+        wigs = Wigs(step = step)
         for groupname in groups:
             for filename in list(groups[groupname].keys()):
-                newname=filename[:-3]+norname[nor]+'wig'
+                newname = filename[:-3] + norname[nor] + 'wig'
                 groups[groupname].set(newname,groups[groupname].pop(filename))
                 wigs.set(newname,groups[groupname].get(newname))
-                if amount!=None:scalepairs[newname]=scalepairs[groupname]
-        if amount==None:scalepairs=None
-        sampling_total=wigs.samplingTotal(region_file=region_file,region_out_file=os.path.join(opath,'normalize_region.wig'),exclude_low_percent=exclude_low_percent,exclude_high_percent=exclude_high_percent)
-        if region_file==None and sampling_total!=None: region_file=os.path.join(opath,'normalize_region.wig')
-        sucnor=wigs.nor(nor=nor,scalepairs=scalepairs,sampling_total=sampling_total,nonzero=nonzero)
-        if sucnor!=1:return sucnor
-        print('time elapsed:', time()-starttime,'seconds')
+                if amount != None:
+                    scalepairs[newname] = scalepairs[groupname]
+        if amount == None:
+            scalepairs = None
+        sampling_total = wigs.samplingTotal(region_file = region_file,
+                                            region_out_file = os.path.join(opath, 'normalize_region.wig'),
+                                            exclude_low_percent=exclude_low_percent,
+                                            exclude_high_percent=exclude_high_percent)
+        if region_file == None and sampling_total != None:
+            region_file = os.path.join(opath, 'normalize_region.wig')
+        sucnor = wigs.nor(nor = nor, scalepairs = scalepairs,
+                          sampling_total = sampling_total, nonzero = nonzero)
+        if sucnor != 1:
+            return sucnor
+        print('time elapsed:', time() - starttime,'seconds')
+
         if save:
-            if (maxgroupsize>1) or (smooth_width>1) or (amount!=None):
-                if not os.path.isdir(os.path.join(opath,'nor')):os.mkdir(os.path.join(opath,'nor'))
+            if (maxgroupsize > 1) or (smooth_width > 1) or (amount != None):
+                if not os.path.isdir(os.path.join(opath, 'nor')):
+                    os.mkdir(os.path.join(opath, 'nor'))
                 print("\nsaving normalized wigs...")
-                wigs.save(os.path.join(opath,'nor'),format=wgfmt,step=step)
-                print('time elapsed:', time()-starttime,'seconds')
+                wigs.save(os.path.join(opath, 'nor'), format=wgfmt, step=step)
+                print('time elapsed:', time() - starttime, 'seconds')
         wigs=''
-    ###### step 5 end --- normalization --- ######
+    # Step 5 completed.
 
-
-
-
-
-    ###### step 8 start --- smoothing --- ######
-    if (smooth_width>1):#if not save, the smoothing will be done after pooling; else it will be done here
+    # Step 6: replicate smoothing
+    if (smooth_width > 1):#if not save, the smoothing will be done after pooling; else it will be done here
         addname+='smooth.'
-        if save:
-            print('\nsmoothing...')
+        # smoothing of individual samples will be done only if necessary
+        if save and (maxgroupsize > 1):
+            print('\nsmoothing individual samples...')
             for groupname in groups:
                 for filename in list(groups[groupname].keys()):
                     groups[groupname].get(filename).smooth(smooth_width)
-                    groups[groupname].set(filename[:-3]+'smooth.wig',groups[groupname].pop(filename))
-                '''
-                if maxgroupsize>1:
-                    if not os.path.isdir(os.path.join(opath,'smooth')):os.mkdir(os.path.join(opath,'smooth'))
-                    groups[groupname].save(os.path.join(opath,'smooth'),format=wgfmt,step=step)
-                '''
+                    groups[groupname].set(filename[:-3] + 'smooth.wig', groups[groupname].pop(filename))
+                if not os.path.isdir(os.path.join(opath, 'smooth')):
+                    os.mkdir(os.path.join(opath,'smooth'))
+                groups[groupname].save(os.path.join(opath, 'smooth'), format=wgfmt, step=step)
             print('time elapsed:', time()-starttime,'seconds')
+    # Step 6 completed.
 
-    ###### step 8 end --- smoothing --- ######
-
-
-    ###### step 9 start --- replicate position calling --- ######
+    # Step 7: replicate position calling
+    # Currently not supported
     '''
     if pcfer:
-        if (len(groups)>1) or (maxgroupsize>1):
-            if not os.path.isdir(opath+'/replicate_positions'):os.mkdir(opath+'/replicate_positions')
+        if (len(groups) > 1) or (maxgroupsize > 1):
+            if not os.path.isdir(opath+'/replicate_positions'):
+                os.mkdir(opath+'/replicate_positions')
             for groupname in groups:
-                for filename in groups[groupname].keys():groups[groupname].get(filename).callPositions(os.path.join(opath,"replicate_positions/"+filename[:-3]+"positions.xls"),width=width,distance=distance,edge=edge,fill_gap=fill_gap,fill_value=fill_value,pcut=pheight,height=height,calculate_P_value=1,poscal=1)
+                for filename in groups[groupname].keys():
+                    groups[groupname].get(filename).callPositions(os.path.join(opath, "replicate_positions/" + filename[:-3] + "positions.xls"),
+                                                                 width = width, distance = distance, edge = edge, fill_gap = fill_gap,
+                                                                 fill_value = fill_value, pcut = pheight, height = height, calculate_P_value = 1, poscal = 1)
     '''
-    ###### step 9 end --- replicate position calling --- ######
+    # Step 7 completed.
 
-
-    ###### step 10 start --- pooling --- ######
-    pooledgroups={}
-    all_wig=all_wig_format(path=tpath)
+    # Step 8: pooling
+    pooledgroups = {}
+    all_wig = all_wig_format(path = tpath)
     for groupname in groups:
-        print("\npooling group",groupname,"...")
-        if not os.path.isdir(os.path.join(opath,'pooled')):os.mkdir(os.path.join(opath,'pooled'))
-        filenames=list(groups[groupname].keys())
-        pooledgroups[groupname]=groups[groupname].pop(filenames[0])
-        if len(filenames)>1:
-            for filename in filenames[1:]:pooledgroups[groupname].add(groups[groupname].pop(filename))
-            pooledgroups[groupname].foldChange(div(1.0,len(filenames)))
-        if (not save) and (smooth_width>1):pooledgroups[groupname].smooth(smooth_width)#if not save, the smoothing will be done here; else it have been done before replicate position calling
+        print("\npooling group", groupname, "...")
+        if not os.path.isdir(os.path.join(opath, 'pooled')):
+            os.mkdir(os.path.join(opath, 'pooled'))
+        filenames = list(groups[groupname].keys())
+        pooledgroups[groupname] = groups[groupname].pop(filenames[0])
+        if len(filenames) > 1:
+            for filename in filenames[1:]:
+                pooledgroups[groupname].add(groups[groupname].pop(filename))
+            pooledgroups[groupname].foldChange(div(1.0, len(filenames)))
+        if (not save) and (smooth_width>1):
+            pooledgroups[groupname].smooth(smooth_width)#if not save, the smoothing will be done here; else it have been done before replicate position calling
         if (len(filenames)>1) or (smooth_width>1) or (cut!='0') or (nor!='N') or (tbg!=None) or (amount!=None) or (not all_wig):
-            pooledgroups[groupname].save(os.path.join(opath,'pooled',groupname+addname+"wig"),format=wgfmt,step=step)
+            pooledgroups[groupname].save(os.path.join(opath, 'pooled', groupname+addname+"wig"), format=wgfmt, step=step)
         print('time elapsed:', time()-starttime,'seconds')
     groups=''
-    ###### step 10 end --- pooling --- ######
+    # Step 8 complete
 
 
     ###### step 11 start --- differential testing ######
