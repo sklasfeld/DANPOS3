@@ -594,8 +594,10 @@ def pathParser(tpath):
                     print('Wrong: file or directory',pairs[i][j],'does not exists')
                     return [{},{}]
                 group=pairs[i][j]
-                while group[-1]=='/':group=group[:-1]
-                groupname=re.sub('/+','_',group)
+                while group[-1]=='/':
+                    group=group[:-1]
+                # groupname=re.sub('/+','_',group) #old naming scheme having PATH_TO_FILE_SAMPLE
+                groupname=group.split("/")[-1] #new naming scheme having just SAMPLE
                 groupname=re.sub('.gz$','',groupname)
                 while groupname[0] in ['.','_']:groupname=groupname[1:]
                 if os.path.isfile(group):
@@ -680,8 +682,11 @@ def scaleParser(amount,extend,groups):
                 print('Wrong: file or directory',mpairs[i][0],'does not exists')
                 return {}
             group=mpairs[i][0]
-            while group[-1]=='/':group=group[:-1]
-            groupname=re.sub('/+','_',group)
+            while group[-1]=='/':
+                group=group[:-1]
+            # groupname=re.sub('/+','_',group) #old naming scheme having PATH_TO_FILE_SAMPLE
+            groupname=group.split("/")[-1] #new naming scheme having just SAMPLE
+
             while groupname[0] in ['.','_']:groupname=groupname[1:]
 
             if os.path.isfile(group):
