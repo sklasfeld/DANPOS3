@@ -108,12 +108,9 @@ class reads:
         maxsize=functions.div(maxsize,step)+1
         
         avg=self.mean()*self.step ##### '*self.step' is added by Kaifu on Aug 1st, 2012 ##### 
-        ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE))}''')
-
         lgpcut=0-functions.div(log(cut),log(10))
         cut=int(avg+0.5)
         # removed this line below since rpy is not efficient
-        #while(0-(functions.div(float(str(ppois(cut,avg.item())).split()[-1]),log(10)))<lgpcut):cut+=1
         while(0-(functions.div(float(str(functions.ppois(cut,avg.item(),lower_tail=False, log_bool = True)).split()[-1]),log(10)))<lgpcut):cut+=1
         if cut<1:cut=1
         
@@ -500,7 +497,7 @@ class reads:
         for sam in sam_reader.fetch():
             try:
                 #col=line.split('\t')
-                if sam.isunmapped:continue
+                if sam.is_unmapped:continue
                 name = sam.query_name
                 chm = sam.reference_name
                 stra = '+'
@@ -620,7 +617,7 @@ class reads:
         for sam in sam_reader.fetch():
             try:
                 # skip unmapped reads
-                if sam.isunmapped:continue
+                if sam.is_unmapped:continue
                 name = sam.query_name
                 chm = sam.reference_name
                 stra = '+'
@@ -754,11 +751,9 @@ class reads:
         print('removing clonal reads ...')
         avg=functions.div(self.mean(),self.step) ##### '*self.step' is added by Kaifu on Aug 1st, 2012 ##### and is further changed to be /self.step on May29, 2014
         if  cut>0 and cut<1:
-            ppois=r('''function(q,avg){return(ppois(q,avg,lower.tail=FALSE,log=TRUE))}''')
             lgpcut=0-functions.div(log(cut),log(10))
             cut=float(avg+0.5)
             # removed this line below since rpy is not efficient
-            #while(0-(functions.div(float(str(ppois(cut,float(avg))).split()[-1]),log(10)))<lgpcut):cut+=1
             pois_dist = functions.ppois(cut,float(avg), lower_tail=False, log_bool = True)
             while(0-(functions.div(pois_dist,log(10)))<lgpcut):
                 cut+=1
