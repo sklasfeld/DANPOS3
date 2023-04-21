@@ -111,7 +111,7 @@ class reads:
         lgpcut=0-functions.div(log(cut),log(10))
         cut=int(avg+0.5)
         # removed this line below since rpy is not efficient
-        while(0-(functions.div(float(str(functions.ppois(cut,avg.item(),lower_tail=False, log_bool = True)).split()[-1]),log(10)))<lgpcut):cut+=1
+        while(0-(functions.div(float(str(functions.ppois(cut,avg.item())).split()[-1]),log(10)))<lgpcut):cut+=1
         if cut<1:cut=1
         
         print('calculating fragment size ...')
@@ -754,10 +754,10 @@ class reads:
             lgpcut=0-functions.div(log(cut),log(10))
             cut=float(avg+0.5)
             # removed this line below since rpy is not efficient
-            pois_dist = functions.ppois(cut,float(avg), lower_tail=False, log_bool = True)
+            pois_dist = functions.ppois(cut,float(avg))
             while(0-(functions.div(pois_dist,log(10)))<lgpcut):
                 cut+=1
-                pois_dist = functions.ppois(cut,float(avg), lower_tail=False, log_bool = True)
+                pois_dist = functions.ppois(cut,float(avg))
             if cut<1:cut=1
         print('whole genome average reads density is',avg,'use cutoff:',cut)
         cut*=self.step ##### added by Kaifu on May29, 2014
