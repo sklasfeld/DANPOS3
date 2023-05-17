@@ -199,7 +199,7 @@ class Wig:
             #if fold!=0:height=m*fold
             #else:
             height=int(m+0.5)
-            while( (0-functions.div(float(functions.ppois(height,m.item()).split()[-1]),log(10))) < pheight):height+=1
+            while( (0-functions.div(float(functions.ppois(height,m.item())),log(10))) < pheight):height+=1
         #if not suppress:
         sys.stdout.write('whole genome aveage value is ' +
             str(m)+', use calling cutoff '+str(height) + "\n")
@@ -271,7 +271,7 @@ class Wig:
                         smt=','.join(smts)
                         lth=functions.div(len(smts),2)
                         if calculate_P_value:
-                            pvl=functions.div(float(functions.ppois(v.item(),m.item()).split()[-1]),log(10))
+                            pvl=functions.div(float(functions.ppois(v.item(),m.item())),log(10))
                             outf.write(chrom+"\t"+str(p)+"\t"+str(pks[chrom][p])+"\t"+smt+'\t'+str(v)+'\t+\t'+str(auc)+'\t'+str(width_above_cutoff)+'\t'+str(0-pvl)+"\n")
                         else:outf.write(chrom+"\t"+str(p)+"\t"+str(pks[chrom][p])+"\t"+smt+'\t'+str(v)+'\t+\t'+str(auc)+'\t'+str(width_above_cutoff)+'\n')
                     else:pks[chrom].pop(p)
@@ -287,7 +287,7 @@ class Wig:
             #if fold!=0:height=m*fold
             #else:
             height=int(m+0.5)
-            while( (0-functions.div(float(functions.ppois(height,m.item())).split()[-1],log(10))) < pheight):height+=1
+            while( (0-functions.div(float(functions.ppois(height,m.item())),log(10))) < pheight):height+=1
         #if not suppress:
         sys.stdout.write('whole genome aveage value is '+str(m)+', use cutoff '+ str(height) + "\n")
         #lines=open(file).readlines()
@@ -330,7 +330,7 @@ class Wig:
                 auc=auc*step
                 total_width_above_cutoff+=width_above_cutoff
                 if calculate_P_value:
-                    pvl=functions.div(float(functions.ppois(v.item(),m.item()).split()[-1]),log(10))
+                    pvl=functions.div(float(functions.ppois(v.item(),m.item())),log(10))
                     outf.write(chrom + '\t' + str(start) + '\t' + str(regions[chrom][start]) +
                         '\t' + str(functions.div((regions[chrom][start] + start),2)) + '\t' + str(width_above_cutoff) +
                          '\t' + str(auc) + '\t' + str(v) + '\t' + str(0-pvl) + "\n")
@@ -377,7 +377,7 @@ class Wig:
         m=self.mean()
         if height==0 and pcut!=0:
             height=int(m+0.5)
-            while( (0-float(functions.ppois(height,m.item())/log(10).split()[-1])) < pcut):height+=1
+            while( (0-float(functions.ppois(height,m.item())/log(10))) < pcut):height+=1
         #if not suppress:
         sys.stdout.write('whole genome aveage value is '+str(m)+', use calling cutoff' + str(height) + "\n")
             
@@ -507,7 +507,7 @@ class Wig:
         m=self.mean()
         if height==0 and pcut!=0:
             height=int(m+0.5)
-            while( (0-float(functions.ppois(height,m.item())/log(10).split()[-1])) < pcut):height+=1
+            while( (0-float(functions.ppois(height,m.item())/log(10))) < pcut):height+=1
         #print 'calling summits ...'
         #smts=twig.callSummits(width=width,pcut=1,height=height,regions=regions)
         #print 'merging summits ...'
