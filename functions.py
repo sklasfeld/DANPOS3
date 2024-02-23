@@ -728,7 +728,7 @@ def region_differential(file1,file2,gainFile,lossFile,ofile=None,widthFDRlist=No
         if t1==t2:tdiff=0
         else:tdiff=log10PropTest([t1,t2,t2,t1])
         if s1==s2:sdiff=0
-        else:sdiff=float((ppois(unnumpy(max(s1,s2)+1),unnumpy(min(s1,s2)+1))/log(10)).split()[-1])
+        else:sdiff=float((ppois(unnumpy(max(s1,s2)+1),unnumpy(min(s1,s2)+1))/log(10)))
         gdiff,ldiff=float(gcol[6]),float(lcol[6])# (0-log10Pval) of gain and loss
         if fdr==1:
             wfdr = div(findRank(widthFDRlist,0-wdiff)*1.0,lw)
@@ -804,7 +804,7 @@ def peakFDR(peakFile1,peakFile2=None,wg1=None,wg2=None,fdrsimu=1000000,cut=5):
         if t1==t2:tdiff=0
         else:tdiff=log10PropTest([t1,t2,t2,t1])
         if s1==s2:sdiff=0
-        else:sdiff=float((ppois(unnumpy(max(s1,s2)+1),unnumpy(min(s1,s2)+1))/log(10)).split()[-1])
+        else:sdiff=float((ppois(unnumpy(max(s1,s2)+1),unnumpy(min(s1,s2)+1))/log(10)))
         w[i],s[i],t[i]=wdiff,sdiff,tdiff
         i+=1
         #print wdiff,sdiff,tdiff
