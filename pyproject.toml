@@ -1,6 +1,6 @@
 [project]
 name = "DANPOS3"
-version = "3.0.1"
+version = "3.1.1"
 dependencies = []
 
 [build-system]
