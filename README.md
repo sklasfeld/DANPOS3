@@ -1,5 +1,4 @@
 # NOTE: Active maintanance will be continued on [here](https://github.com/boenc28-cmyk/DANPOS)
-Please continue to use the stable version here, a stable release has not yet been built on the fork.
 
 # DANPOS3
 
